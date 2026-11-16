@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo：自動ズーム搭載の無料画面録画",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "カーソル自動ズーム、1:1カメラワイプ、モザイクぼかし、透かしなし4K 60fps MP4出力を備えた無料画面録画ツール。100%ローカル処理。",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — 自動ズーム機能付き無料画面録画",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — 自動ズーム機能付き無料画面録画",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

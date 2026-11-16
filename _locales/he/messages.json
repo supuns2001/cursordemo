@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: מקליט מסך עם זום אוטומטי",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "מקליט מסך חינמי עם זום אוטומטי לסמן, מצלמת רשת 1:1, טשטוש וייצוא MP4 ב-4K 60fps ללא סימן מים. 100% מקומי ופרטי.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — מקליט מסך עם זום אוטומטי",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — מקליט מסך עם זום אוטומטי",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

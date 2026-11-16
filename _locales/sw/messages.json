@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Kinasa Skrini chenye Auto-Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Kinasa skrini cha bure chenye kukuza kipanya kiotomatiki, kamera ya 1:1, ukungu na usafirishaji wa MP4 4K 60fps bila alama ya maji.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Kinasa Skrini chenye Auto-Zoom",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Kinasa Skrini chenye Auto-Zoom",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Εγγραφή Οθόνης με Αυτόματο Ζουμ",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Δωρεάν εγγραφή οθόνης με αυτόματο ζουμ δρομέα, κάμερα 1:1, θόλωμα και εξαγωγή MP4 4K 60fps χωρίς υδατογράφημα. 100% τοπικά.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Εγγραφή Οθόνης με Αυτόματο Ζουμ",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Εγγραφή Οθόνης με Αυτόματο Ζουμ",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

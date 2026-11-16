@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Nahrávání Obrazovky s Auto-Zoomem",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Bezplatné nahrávání obrazovky s automatickým zoomem kurzoru, 1:1 webkamerou, rozmazáním a exportem 4K 60fps MP4 bez vodoznaku.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Nahrávání Obrazovky s Automatickým Zoomem",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Nahrávání Obrazovky s Automatickým Zoomem",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

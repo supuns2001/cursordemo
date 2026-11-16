@@ -1,0 +1,28 @@
+# CursorDemo: Free Screen Recorder with Automatic Zoom & Product Demo Editor
+
+> CursorDemo is a 100% free, open-source (MIT) Chrome extension screen recorder with automatic cursor-following zoom, fixed-spot target zoom, Catmull-Rom smooth cursor interpolation, Perlin 5th-order smootherstep camera easing, zoom-synced & screen-locked privacy blur, draggable 1:1 webcam overlay with Smart Dodge, and local 4K 60fps MP4/WebM export with zero cloud uploads or watermarks.
+
+CursorDemo is built for SaaS founders, developer advocates, product marketers, educators, and QA engineers who want Screen Studio-grade automatic zoom and cursor smoothing across Windows 10/11, macOS, Linux, and ChromeOS directly inside Google Chrome, Brave, Microsoft Edge, Opera, Yandex Browser, Vivaldi, Arc, or any Chromium browser.
+
+## Primary Documentation & Agent Discovery
+
+- [CursorDemo Official Documentation & Overview](https://cursordemo.com/): Canonical product overview, AEO/GEO technical specification, benchmark comparison matrix, and FAQ.
+- [CursorDemo Full Technical Knowledge Bundle (llms-full.txt)](https://cursordemo.com/llms-full.txt): Exhaustive technical architecture, mathematical formulas for Catmull-Rom cursor smoothing and Perlin smootherstep zoom easing, IndexedDB schema, and full comparison data.
+- [CursorDemo Pricing & Open-Source Licensing Matrix (pricing.md)](https://cursordemo.com/pricing.md): Machine-readable pricing breakdown ($0 forever free MIT open-source) compared against Screen Studio, Cursorful, and Loom.
+- [Chrome Web Store Extension Listing](https://chromewebstore.google.com/detail/cursordemo-screen-recorder/YOUR_EXTENSION_ID): Official Chrome Web Store installation page localized across 56 Chrome Web Store languages.
+- [GitHub Open-Source Repository](https://github.com/cursordemo/cursordemo-screen-recorder): Complete Manifest V3 source code, unpacked developer installation guide, and release history.
+
+## Core Architecture & Source Modules
+
+- [README & Quickstart Guide](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/README.md): Installation instructions, feature matrix, keyboard shortcuts, and architecture diagram.
+- [Zoom Analyzer & Smootherstep Camera Engine (zoom-analyzer.js)](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/zoom-analyzer.js): Click-cluster detection, cursor dwell velocity analysis, progressive edge & corner focal boost (up to 2.80x), 36px camera deadzone, and Ken Perlin 5th-order polynomial easing.
+- [60Hz DOM Cursor & Camera Overlay Content Script (content.js)](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/content.js): High-frequency pointer/click/scroll telemetry sampling with multi-monitor and left-sidebar (Opera/Brave/Edge/Vivaldi/Yandex) geometry calibration.
+- [Non-Linear Timeline Editor & Canvas Compositor (editor.js)](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/editor.js): Dual-mode zoom (Follow Cursor + Fixed Spot target dot), zoom-synced/screen-locked privacy blur (Frosted Glass, Pixel Mosaic, Redacted Blackout), free-form 1:1 webcam overlay (Float, Smart Dodge, Zoom With Screen), 24 studio backdrops, 9 aspect ratios, and 4K 60fps MP4/WebM exporter.
+- [MediaRecorder Capture Studio & IndexedDB Storage (record.js)](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/record.js): Progressive cross-browser `getDisplayMedia` capture orchestration, WebAudio microphone + system audio mixing, and local `CursorDemoVideoStorage` persistence.
+
+## Governance, Privacy & Community Policies
+
+- [Privacy Policy (100% Local Processing)](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/PRIVACY_POLICY.md): Zero telemetry, zero external servers, and strict local IndexedDB storage policy.
+- [Security & Vulnerability Disclosure Policy](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/SECURITY.md): Manifest V3 permission justification and security reporting workflow.
+- [Contribution & Editorial Review Guidelines](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/CONTRIBUTING.md): Pull request standards, benchmark verification, and 56-locale localization rules.
+- [MIT Open-Source License](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/LICENSE): Permissive commercial and personal software license.

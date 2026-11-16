@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: অটো জুম স্ক্রিন রেকর্ডার",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "অটো কার্সার জুম, ১:১ ওয়েবক্যাম, ব্লার এবং ওয়াটারমার্ক ছাড়া 4K 60fps MP4 এক্সপোর্ট সহ ফ্রি স্ক্রিন রেকর্ডার। ১০০% লোকাল।",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — অটো জুম সহ ফ্রি স্ক্রিন রেকর্ডার",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — অটো জুম সহ ফ্রি স্ক্রিন রেকর্ডার",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

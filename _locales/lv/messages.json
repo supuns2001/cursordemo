@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Ekrāna Ierakstītājs ar Auto-Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Bezmaksas ekrāna ierakstītājs ar automātisku kursora tālummaiņu, 1:1 tīmekļa kameru, izpludināšanu un 4K 60fps MP4 eksportu.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Ekrāna Ierakstītājs ar Automātisku Tālummaiņu",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Ekrāna Ierakstītājs ar Automātisku Tālummaiņu",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

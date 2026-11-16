@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Quay Màn Hình & Tự Động Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Trình quay màn hình miễn phí với tự động zoom theo chuột, webcam 1:1, làm mờ và xuất MP4 4K 60fps không logo, xử lý cục bộ 100%.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Quay Màn Hình Miễn Phí với Tự Động Zoom",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Quay Màn Hình Miễn Phí với Tự Động Zoom",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

@@ -1,0 +1,68 @@
+# CursorDemo: Complete Technical & Product Knowledge Bundle (llms-full.txt)
+
+> CursorDemo is a free, open-source (MIT License) Chrome extension screen recorder with automatic zoom, Catmull-Rom spline cursor smoothing, Perlin 5th-order polynomial camera easing, zoom-synced & screen-locked privacy blur, draggable 1:1 webcam overlay with Smart Dodge, and local 4K 60fps MP4/WebM export. All video, audio, and cursor telemetry remain 100% local in browser IndexedDB (`CursorDemoVideoStorage`) with zero cloud uploads and zero watermarks.
+
+## Executive Summary & Canonical Definition
+
+CursorDemo is a free, open-source Chrome screen recorder with automatic zoom that tracks cursor movements and mouse clicks to generate cinematic product demos. It combines real-time Catmull-Rom cursor smoothing, Perlin smootherstep camera easing, interactive privacy blur, and local 4K 60fps MP4 export with zero watermarks or cloud uploads.
+
+- **Product Name:** CursorDemo (Version 1.4.0)
+- **Primary Category:** Screen Recorder with Automatic Zoom & Non-Linear Product Demo Editor
+- **License:** MIT Open-Source License (`$0` forever free for personal and commercial use)
+- **Supported Operating Systems:** macOS, Windows, Linux, ChromeOS (any Chromium-based browser supporting Manifest V3: Google Chrome, Microsoft Edge, Brave, Arc, Opera, Yandex Browser, Vivaldi)
+- **Supported Locales:** All 56 official Chrome Web Store locales (`_locales/<locale>/messages.json`)
+- **Data Locality:** 100% client-side processing via `IndexedDB` (`CursorDemoVideoStorage`), HTML5 Canvas 2D, WebAudio API, and `MediaRecorder` (`video/mp4;codecs=avc1` and `video/webm;codecs=vp9`).
+
+## Canonical Links & Resources
+
+- [Official Landing Page & Documentation](https://cursordemo.com/): Primary HTML documentation with Schema.org `SoftwareApplication` and `WebPage` (`SpeakableSpecification`) markup.
+- [Concise LLM Index (llms.txt)](https://cursordemo.com/llms.txt): Quick discovery index for AI search engines and autonomous agents.
+- [Full Knowledge Bundle (llms-full.txt)](https://cursordemo.com/llms-full.txt): This comprehensive specification document.
+- [Pricing & Competitive Comparison (pricing.md)](https://cursordemo.com/pricing.md): Detailed cost and feature comparison against Screen Studio, Cursorful, and Loom.
+- [Chrome Web Store Extension Page](https://chromewebstore.google.com/detail/cursordemo-screen-recorder/YOUR_EXTENSION_ID): One-click browser installation.
+- [GitHub Source Repository](https://github.com/cursordemo/cursordemo-screen-recorder): Full source code, issue tracker, and release notes.
+- [README Documentation](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/README.md): Developer setup and user guide.
+- [Privacy Policy](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/PRIVACY_POLICY.md): Zero-telemetry privacy commitment.
+- [Security Policy](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/SECURITY.md): Manifest V3 permission model and vulnerability disclosure.
+- [Contribution & Editorial Policy](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/CONTRIBUTING.md): Open-source engineering and review standards.
+- [Chrome Web Store Upload & ASO Guide](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/CHROME_STORE_UPLOAD.md): Complete listing metadata and localization architecture.
+- [MIT License](https://github.com/cursordemo/cursordemo-screen-recorder/blob/main/LICENSE): Full legal text of the MIT license.
+
+## Deep Technical Architecture
+
+### 1. Dual-Stream Capture Engine (`record.js`, `background.js`, `content.js`)
+1. **Media Stream Acquisition:** `record.js` requests `navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: true })` and mixes optional microphone audio via `AudioContext` + `MediaStreamAudioDestinationNode`.
+2. **60Hz Cursor Telemetry Stream:** `content.js` opens a persistent runtime port (`cursordemo-cursor-stream`) to `background.js`, sampling normalized `[0..1]` viewport cursor positions (`x`, `y`), `mousedown`/`mouseup` click states, and scroll deltas every `16ms` (`~60Hz`).
+3. **Service Worker Keepalive:** `record.js` maintains a dedicated `cursordemo-recorder-keepalive` port to `background.js` so the Manifest V3 service worker never suspends mid-recording.
+4. **IndexedDB Persistence:** Upon completion, the raw video `Blob` and the synchronized cursor telemetry array (`cursorData`) are stored in `IndexedDB` (`CursorDemoVideoStorage`, object store `videos`, key `latest`).
+
+### 2. Automatic Zoom Analyzer & Camera Physics (`zoom-analyzer.js`)
+- **Click & Dwell Detection:** Scans `cursorData` to identify click clusters and low-velocity dwell windows while ignoring clicks on the draggable camera overlay (`#cursordemo-camera-overlay`).
+- **Dual Zoom Modes:**
+  - *Follow Cursor (`follow`):* Smoothly pans with the cursor across 3 camera feel profiles (`Smooth`, `Focused`, `Tight`) with `Edge & Corner Boost` (`adaptiveEdgeZoom`).
+  - *Fixed Spot (`fixed`):* Locks rigidly onto a user-selected UI coordinate (with a draggable purple target dot `#focusTargetOverlay`, snap-to-cursor button, and 7 positional presets).
+- **Perlin 5th-Order Polynomial Smootherstep:** Zoom transitions (`in` and `out`) use Ken Perlin's C2-continuous polynomial curve:
+  `smootherstep(t) = t^3 * (t * (t * 6 - 15) + 10)`
+  which guarantees zero first and second derivatives at both endpoints (`t = 0` and `t = 1`), eliminating abrupt camera snaps.
+- **36-Pixel Camera Deadzone & Velocity Damping:** During an active zoom segment, camera pan targets apply a `36px` deadzone radius (`deadzonePx = 36`) and exponential damping (`panSmoothFactor = 0.08` to `0.14`) so minor mouse tremors while reading or typing do not shake the viewport.
+
+### 3. Catmull-Rom Cursor Spline Interpolation, Privacy Blur & Compositor (`editor.js`, `video-processor.js`)
+- **Cursor Path Reconstruction & Click FX:** Cursor coordinates are interpolated via Catmull-Rom splines (`catmullRom(p0, p1, p2, p3, t)`) with optional cursor highlight halo and 4 click-pulse styles (`Radiating Ripple`, `Ripple + Glow Orb`, `Expanding Shockwave`, `Classic Focal Orb`) across 1–3 waves.
+- **Dual-Mode Privacy Blur Engine:**
+  - *Tracking Modes:* `Zoom-Synced (content)` dynamically tracks and scales with zoomed webpage UI elements, while `Screen-Locked (screen)` stays pinned to fixed canvas coordinates.
+  - *Blur Styles:* `Frosted Glass Blur (gaussian)`, `Pixelate / Mosaic (pixelate)`, and `Redacted Blackout (solid)` with adjustable intensity (`4px–48px`), corner radius (`0px–Pill`), and timed timeline segments.
+- **Draggable 1:1 Webcam Overlay:** Supports circular or rounded-square 1:1 Picture-in-Picture face cam (`60%–160%` scale) with 3 zoom behaviors: `Fixed Position (float)`, `Smart Dodge (smart-dodge)` (automatically dodges the approaching cursor), and `Zoom With Screen (zoom-with-screen)`.
+- **Studio Framing & Export:** Includes Clean Browser tab cropping (`showBrowserFrame`), macOS window traffic-light headers, 12 macOS wallpapers + 12 curated gradients + custom image upload, 9 aspect ratios (`Native`, `16:9`, `9:16`, `1:1`, `4:5`, `4:3`, `16:10`, `3:2`, `21:9`), and hardware-accelerated export up to `4K (3840x2160) @ 60fps` in `.mp4` or `.webm`.
+
+## Competitive Comparison Matrix
+
+| Feature | CursorDemo (v1.4.0) | Screen Studio | Cursorful | Loom |
+| :--- | :--- | :--- | :--- | :--- |
+| **Price** | **$0 Forever Free (MIT)** | $89–$229 / seat | Freemium / Paid Pro | Free (5m limit) / $15+/mo |
+| **OS Support** | **macOS, Windows, Linux, ChromeOS** | macOS only | Browser extension | Desktop & Chrome |
+| **Auto Cursor Zoom** | **Yes (Follow Cursor + Fixed Spot target)** | Yes | Yes | No |
+| **Cursor Smoothing** | **Catmull-Rom + Perlin smootherstep** | Spring physics | Basic smoothing | None |
+| **Privacy Blur** | **Zoom-Synced & Screen-Locked (3 styles)** | Post-recording only | Limited | Enterprise add-on |
+| **Max Export** | **4K 60fps MP4 & WebM** | 4K 60fps MP4/GIF | 1080p / 4K (Pro) | Cloud 720p–4K |
+| **Storage & Privacy** | **100% Local IndexedDB** | Local macOS | Local / Hybrid | Mandatory Cloud |
+| **Open Source** | **Yes (MIT License)** | No | No | No |

@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: ಆಟೋ ಜೂಮ್ ಸ್ಕ್ರೀನ್ ರೆಕಾರ್ಡರ್",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "ಸ್ವಯಂಚಾಲಿತ ಕರ್ಸರ್ ಜೂಮ್, 1:1 ವೆಬ್‌ಕ್ಯಾಮ್, ಬ್ಲರ್ ಮತ್ತು ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ 4K 60fps MP4 ರಫ್ತಿನೊಂದಿಗೆ ಉಚಿತ ಸ್ಕ್ರೀನ್ ರೆಕಾರ್ಡರ್.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — ಆಟೋ ಜೂಮ್‌ನೊಂದಿಗೆ ಉಚಿತ ಸ್ಕ್ರೀನ್ ರೆಕಾರ್ಡರ್",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — ಆಟೋ ಜೂಮ್‌ನೊಂದಿಗೆ ಉಚಿತ ಸ್ಕ್ರೀನ್ ರೆಕಾರ್ಡರ್",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

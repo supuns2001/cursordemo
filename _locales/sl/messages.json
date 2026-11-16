@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Snemalnik Zaslona z Avto-Zoomom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Brezplačen snemalnik zaslona s samodejnim povečanjem kazalca, 1:1 kamero, zameglitvijo in izvozom MP4 4K 60fps brez vodnega žiga.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Snemalnik Zaslona s Samodejnim Zoomom",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Snemalnik Zaslona s Samodejnim Zoomom",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

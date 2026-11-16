@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Ekrano Įrašymas ir Auto-Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Nemokamas ekrano įrašymas su automatiniu žymeklio priartinimu, 1:1 kamera, suliejimu ir 4K 60fps MP4 eksportu be vandens ženklo.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Ekrano Įrašymas su Automatiniu Priartinimu",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Ekrano Įrašymas su Automatiniu Priartinimu",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Nagrywanie Ekranu i Auto Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Darmowy rejestrator ekranu z automatycznym zoomem kursora, kamerą 1:1, rozmyciem i eksportem MP4 4K 60fps bez znaku wodnego.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Nagrywanie Ekranu z Automatycznym Zoomem",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Nagrywanie Ekranu z Automatycznym Zoomem",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

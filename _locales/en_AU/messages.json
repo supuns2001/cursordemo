@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Screen Recorder with Auto Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Free screen recorder with automatic cursor zoom, 1:1 webcam overlay, manual blur, and 4K 60fps MP4 export. 100% local, no watermark.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Free Screen Recorder with Auto Zoom",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Free Screen Recorder with Auto Zoom",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

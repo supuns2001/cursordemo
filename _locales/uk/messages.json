@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Запис Екрана з Автозумом",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Безкоштовний запис екрана з автозумом курсора, вебкамерою 1:1, розмиттям та експортом 4K 60fps MP4 без водяних знаків.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Запис Екрана з Автоматичним Зумом",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Запис Екрана з Автоматичним Зумом",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

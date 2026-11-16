@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: مسجل شاشة مع تقريب تلقائي",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "مسجل شاشة مجاني مع تقريب تلقائي للمؤشر، كاميرا 1:1، تمويه يدوي وتصدير MP4 بدقة 4K 60fps بدون علامة مائية ومحلي بالكامل.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — مسجل شاشة مجاني مع تقريب تلقائي",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — مسجل شاشة مجاني مع تقريب تلقائي",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

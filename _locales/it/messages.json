@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Registratore Schermo e Auto Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Registratore schermo gratuito con zoom automatico sul cursore, webcam 1:1, sfocatura ed esportazione MP4 4K 60fps senza filigrana.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Registratore Schermo con Zoom Automatico",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Registratore Schermo con Zoom Automatico",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

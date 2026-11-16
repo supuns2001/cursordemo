@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo：自動縮放免費螢幕錄影工具",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "免費高畫質螢幕錄影擴充功能，支援游標自動縮放聚焦、1:1 圓形視訊鏡頭、隱私模糊及無浮水印 4K 60fps MP4 匯出，100% 本機處理。",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — 具備自動縮放的免費螢幕錄影工具",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — 具備自動縮放的免費螢幕錄影工具",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

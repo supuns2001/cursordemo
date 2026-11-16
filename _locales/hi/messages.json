@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: ऑटो ज़ूम स्क्रीन रिकॉर्डर",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "ऑटोमैटिक कर्सर ज़ूम, 1:1 वेबकैम, ब्लर और बिना वॉटरमार्क 4K 60fps MP4 एक्सपोर्ट के साथ मुफ़्त स्क्रीन रिकॉर्डर। 100% लोकल।",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — ऑटो ज़ूम के साथ मुफ़्त स्क्रीन रिकॉर्डर",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — ऑटो ज़ूम के साथ मुफ़्त स्क्रीन रिकॉर्डर",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

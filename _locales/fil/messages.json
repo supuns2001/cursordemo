@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Screen Recorder may Auto Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Libreng screen recorder na may auto cursor zoom, 1:1 webcam, manual blur, at 4K 60fps MP4 export. Walang watermark at 100% lokal.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Libreng Screen Recorder na may Auto Zoom",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Libreng Screen Recorder na may Auto Zoom",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

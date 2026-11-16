@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: 자동 줌 무료 화면 녹화기",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "자동 커서 줌, 1:1 웹캠 오버레이, 블러 모자이크 및 워터마크 없는 4K 60fps MP4 내보내기를 지원하는 100% 로컬 무료 화면 녹화기.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — 자동 줌 기능을 갖춘 무료 화면 녹화기",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — 자동 줌 기능을 갖춘 무료 화면 녹화기",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

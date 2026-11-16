@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Otomatik Zoomlu Ekran Kaydedici",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Otomatik imleç yakınlaştırma, 1:1 kamera, bulanıklaştırma ve filigransız 4K 60fps MP4 dışa aktarma sunan ücretsiz ekran kaydedici.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Otomatik Zoomlu Ekran Kaydedici",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Otomatik Zoomlu Ekran Kaydedici",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

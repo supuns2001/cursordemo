@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Skjermopptaker med Auto-Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Gratis skjermopptaker med automatisk markør-zoom, 1:1 webkamera, uskarphet og 4K 60fps MP4-eksport uten vannmerke. 100% lokalt.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Skjermopptaker med Automatisk Zoom",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Skjermopptaker med Automatisk Zoom",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: อัดหน้าจอพร้อมซูมอัตโนมัติ",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "โปรแกรมอัดหน้าจอฟรีพร้อมซูมเคอร์เซอร์อัตโนมัติ เว็บแคม 1:1 เบลอจุดสำคัญ และส่งออก MP4 4K 60fps ไม่มีลายน้ำ ประมวลผลในเครื่อง 100%",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — อัดหน้าจอฟรีพร้อมซูมอัตโนมัติ",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — อัดหน้าจอฟรีพร้อมซูมอัตโนมัติ",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: ఆటో జూమ్ స్క్రీన్ రికార్డర్",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "ఆటోమేటిక్ కర్సర్ జూమ్, 1:1 వెబ్‌క్యామ్, బ్లర్ మరియు వాటర్‌మార్క్ లేని 4K 60fps MP4 ఎక్స్‌పోర్ట్‌తో ఉచిత స్క్రీన్ రికార్డర్.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — ఆటో జూమ్‌తో ఉచిత స్క్రీన్ రికార్డర్",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — ఆటో జూమ్‌తో ఉచిత స్క్రీన్ రికార్డర్",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

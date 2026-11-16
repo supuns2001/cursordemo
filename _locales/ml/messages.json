@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: ഓട്ടോ സൂം സ്ക്രീൻ റെക്കോർഡർ",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "ഓട്ടോ കഴ്‌സർ സൂം, 1:1 വെബ്‌ക്യാം, ബ്ലർ, വാട്ടർമാർക്കില്ലാത്ത 4K 60fps MP4 എക്‌സ്‌പോർട്ട് എന്നിവയുള്ള സൗജന്യ സ്‌ക്രീൻ റെക്കോർഡർ.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — ഓട്ടോ സൂമുള്ള സൗജന്യ സ്ക്രീൻ റെക്കോർഡർ",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — ഓട്ടോ സൂമുള്ള സൗജന്യ സ്ക്രീൻ റെക്കോർഡർ",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

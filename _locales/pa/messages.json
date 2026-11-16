@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: ਆਟੋ ਜ਼ੂਮ ਸਕ੍ਰੀਨ ਰਿਕਾਰਡਰ",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "ਆਟੋਮੈਟਿਕ ਕਰਸਰ ਜ਼ੂਮ, 1:1 ਵੈੱਬਕੈਮ, ਬਲਰ ਅਤੇ ਬਿਨਾਂ ਵਾਟਰਮਾਰਕ 4K 60fps MP4 ਐਕਸਪੋਰਟ ਨਾਲ ਮੁਫ਼ਤ ਸਕ੍ਰੀਨ ਰਿਕਾਰਡਰ। 100% ਲੋਕਲ।",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — ਆਟੋ ਜ਼ੂਮ ਨਾਲ ਮੁਫ਼ਤ ਸਕ੍ਰੀਨ ਰਿਕਾਰਡਰ",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — ਆਟੋ ਜ਼ੂਮ ਨਾਲ ਮੁਫ਼ਤ ਸਕ੍ਰੀਨ ਰਿਕਾਰਡਰ",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

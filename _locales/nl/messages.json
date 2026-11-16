@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Schermrecorder met Auto-Zoom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Gratis schermrecorder met automatische cursor-zoom, 1:1 webcam, vervaging en 4K 60fps MP4-export. 100% lokaal en zonder watermerk.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Schermrecorder met Automatische Zoom",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Schermrecorder met Automatische Zoom",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

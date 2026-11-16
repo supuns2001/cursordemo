@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo：自动缩放免费录屏工具",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "免费高清录屏扩展，支持鼠标光标自动缩放聚焦、1:1圆形摄像头、隐私打码模糊及无水印 4K 60fps MP4 导出，100% 本地处理。",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — 带自动缩放的免费录屏工具",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — 带自动缩放的免费录屏工具",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Perekam Layar & Zoom Otomatis",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Perekam layar gratis dengan zoom kursor otomatis, webcam 1:1, efek blur, dan ekspor MP4 4K 60fps tanpa watermark. 100% lokal.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Perekam Layar Gratis dengan Zoom Otomatis",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Perekam Layar Gratis dengan Zoom Otomatis",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

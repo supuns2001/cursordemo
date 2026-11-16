@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Snimač Zaslona s Auto-Zoomom",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Besplatni snimač zaslona s automatskim zumiranjem kursora, 1:1 web-kamerom, zamućivanjem i 4K 60fps MP4 izvozom bez vodenog žiga.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Snimač Zaslona s Automatskim Zumiranjem",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Snimač Zaslona s Automatskim Zumiranjem",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

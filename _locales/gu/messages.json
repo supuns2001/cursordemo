@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: ઓટો ઝૂમ સ્ક્રીન રેકોર્ડર",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "ઓટોમેટિક કર્સર ઝૂમ, 1:1 વેબકેમ, બ્લર અને વોટરમાર્ક વિના 4K 60fps MP4 નિકાસ સાથે મફત સ્ક્રીન રેકોર્ડર. 100% લોકલ.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — ઓટો ઝૂમ સાથે મફત સ્ક્રીન રેકોર્ડર",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — ઓટો ઝૂમ સાથે મફત સ્ક્રીન રેકોર્ડર",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}

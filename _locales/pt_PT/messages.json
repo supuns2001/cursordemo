@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "CursorDemo: Gravador de Ecrã com Zoom Auto",
+    "description": "Extension name in Chrome Web Store (strictly <= 45 characters)"
+  },
+  "extDescription": {
+    "message": "Gravador de ecrã gratuito com zoom automático no cursor, webcam 1:1, desfocagem e exportação MP4 4K 60fps sem marca de água.",
+    "description": "Extension short description in Chrome Web Store (strictly <= 132 characters)"
+  },
+  "extActionTitle": {
+    "message": "CursorDemo — Gravador de Ecrã com Zoom Automático",
+    "description": "Extension toolbar button tooltip title"
+  },
+  "extTitle": {
+    "message": "CursorDemo — Gravador de Ecrã com Zoom Automático",
+    "description": "Legacy alias for extension toolbar button tooltip title"
+  }
+}
