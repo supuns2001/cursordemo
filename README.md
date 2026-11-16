@@ -45,26 +45,24 @@ Install the latest signed release directly from the [Chrome Web Store](https://c
 Clone this repository and load the extension directly into any Chromium browser with zero build tools or external dependencies required:
 
 ```bash
-git clone https://github.com/cursordemo/cursordemo-screen-recorder.git cursordemo
+git clone https://github.com/getwebgrowth/cursordemo.git
 cd cursordemo
 ```
 
 1. Open your Chromium browser (`chrome://extensions/`, `brave://extensions/`, `edge://extensions/`, `opera://extensions/`, `browser://extensions/` in Yandex, or `vivaldi://extensions/`).
 2. Enable **Developer mode** using the toggle in the top-right corner.
 3. Click **Load unpacked** in the top-left action bar.
-4. Select the `cursordemo` directory.
+4. Select the `cursordemo` directory (or run `npm run build` and select `dist/unpacked/`).
 5. Pin **CursorDemo** to your browser toolbar and click the icon to launch the Recording Studio.
 
-### Packaging a Clean Chrome Web Store Release Zip
-To generate a production-ready `cursordemo.zip` containing only runtime extension files:
+### Option 3: Build Local `dist/` & `.zip` (or Download Auto-Built Artifact on GitHub)
+Every push to `main` automatically runs CI checks and builds a downloadable `.zip` under the **GitHub Actions** tab (and attaches `.zip` assets to **GitHub Releases** on `v*` tags).
+
+To verify and build `dist/cursordemo.zip` locally on **Windows, macOS, or Linux** (Node.js 18+, zero `npm install` needed):
 
 ```bash
-zip -r cursordemo.zip \
-  manifest.json background.js content.js \
-  record.html record.js editor.html editor.js \
-  video-processor.js zoom-analyzer.js LICENSE \
-  icons/icon16.png icons/icon32.png icons/icon48.png icons/icon128.png \
-  _locales/
+npm test          # Syntax, 56-locale & parity verification
+npm run build     # Outputs dist/unpacked/, dist/cursordemo.zip & dist/cursordemo-v<version>.zip
 ```
 
 ## Examples, Demo Workflow & Output Specifications

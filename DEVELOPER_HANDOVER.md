@@ -23,25 +23,18 @@ No bundler or transpiler is required — **CursorDemo** runs as pure Vanilla ES2
 4. Click **Load unpacked** and select the cloned `cursordemo/` folder.
 5. Click the toolbar icon to open `record.html`.
 
-### Run Local Syntax & Logic Verification (Requires Node.js 18+)
+### Run Verification & Build `dist/` Package (Requires Node.js 18+, zero `npm install` needed)
 ```bash
-# 1. Syntax check every core script
-for f in background.js content.js record.js editor.js video-processor.js zoom-analyzer.js; do
-  node --check "$f" || exit 1
-done
+# Run JS syntax check + 56-locale validation + DOM/parity assertions
+npm test
 
-# 2. Validate all 56 Chrome Web Store _locales/*/messages.json bundles
-node -e '
-const fs = require("fs"), path = require("path");
-const dirs = fs.readdirSync("_locales");
-for (const d of dirs) {
-  const m = JSON.parse(fs.readFileSync(path.join("_locales", d, "messages.json"), "utf8"));
-  if (m.extName.message.length > 45) throw new Error(d + " extName > 45");
-  if (m.extDescription.message.length > 132) throw new Error(d + " extDescription > 132");
-}
-console.log("Validated", dirs.length, "locales OK");
-'
+# Build clean Chrome Web Store package into dist/unpacked/ and dist/cursordemo.zip
+npm run build
 ```
+
+### Download Pre-Built `.zip` Automatically from GitHub
+- Every push to `main` runs [`.github/workflows/build-release.yml`](.github/workflows/build-release.yml) and uploads a downloadable `cursordemo-v<version>-extension-zip` artifact under the repository **Actions** tab.
+- Pushing a version tag (e.g. `git tag v1.4.0 && git push origin v1.4.0`) automatically publishes a **GitHub Release** with `cursordemo.zip` and `cursordemo-v<version>.zip` attached.
 
 ---
 

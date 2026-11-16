@@ -25,6 +25,7 @@ npm-debug.log*
 cursor-data-*.json
 
 # Chrome extension build artifacts
+dist/
 *.crx
 *.pem
 *.zip
