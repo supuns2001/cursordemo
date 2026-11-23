@@ -1878,20 +1878,13 @@ function toggleMute() {
   if (video.muted) {
     muteBtn?.classList.add('active');
     if (muteIcon) {
-      muteIcon.innerHTML = `
-        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-        <line x1="23" y1="9" x2="17" y2="15"></line>
-        <line x1="17" y1="9" x2="23" y2="15"></line>
-      `;
+      muteIcon.innerHTML = '<use href="#icon-volume-x"></use>';
     }
     muteBtn?.setAttribute('title', 'Unmute preview audio (M)');
   } else {
     muteBtn?.classList.remove('active');
     if (muteIcon) {
-      muteIcon.innerHTML = `
-        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-      `;
+      muteIcon.innerHTML = '<use href="#icon-volume"></use>';
     }
     muteBtn?.setAttribute('title', 'Mute preview audio (M)');
   }
@@ -5732,9 +5725,9 @@ function togglePlay() {
 
 function updatePlayButton() {
   if (isPlaying) {
-    playBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+    playBtn.innerHTML = '<svg class="studio-icon studio-icon-md fill-current"><use href="#icon-pause"></use></svg>';
   } else {
-    playBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+    playBtn.innerHTML = '<svg class="studio-icon studio-icon-md fill-current"><use href="#icon-play"></use></svg>';
   }
 }
 
