@@ -119,6 +119,7 @@ let redoStack = [];
 let cameraOverlayEnabled = false; // Store camera overlay flag at module level
 let currentVideoBlob = null; // Store active video blob for export
 let currentVideoId = null; // Store active IndexedDB videoId for recovery
+let currentVideoTitle = 'Studio Recording'; // Active project/recording title
 let currentCameraBlob = null; // Store active synchronized webcam blob for preview & export
 let cameraVideo = null; // Offscreen video element for Face Cam compositing
 let cameraVideoLoaded = false;
@@ -658,6 +659,7 @@ async function init() {
     // Check if video is stored in IndexedDB
     if (response.videoStoredInIndexedDB && typeof response.videoData === 'string' && !response.videoData.startsWith('data:')) {
       currentVideoId = response.videoData;
+      currentVideoTitle = 'Recording ' + new Date().toLocaleDateString();
       // Video is in IndexedDB - retrieve it
       debugLog('[Editor] Video stored in IndexedDB, retrieving with ID:', response.videoData);
       try {
@@ -1932,10 +1934,22 @@ function setupEventListeners() {
   document.getElementById('newRecordingBtn').addEventListener('click', startNewRecording);
   document.getElementById('loadVideoBtn').addEventListener('click', loadVideoFromFile);
   
-  // Topbar shortcuts
+  // Topbar shortcuts & actions
   document.getElementById('loadVideoTopBtn')?.addEventListener('click', loadVideoFromFile);
   document.getElementById('newRecordingTopBtn')?.addEventListener('click', startNewRecording);
   document.getElementById('exportTopBtn')?.addEventListener('click', exportVideo);
+  document.getElementById('topbarUndoBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    undo();
+  });
+  document.getElementById('topbarRedoBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    redo();
+  });
+  document.getElementById('topbarEditModeBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showToast('In Studio Video Editor');
+  });
   
   // Export button
   document.getElementById('exportBtn').addEventListener('click', exportVideo);
@@ -3676,6 +3690,41 @@ function applyWebcamUndoState(ws) {
   updateFaceCamUI();
 }
 
+function updateUndoRedoButtons() {
+  const undoBtn = document.getElementById('topbarUndoBtn');
+  const redoBtn = document.getElementById('topbarRedoBtn');
+  if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+  if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+}
+
+function updateTopbarProjectInfo(title, durationSec) {
+  const titleEl = document.getElementById('topbarProjectTitle');
+  const durEl = document.getElementById('projectDurationTag');
+  const resEl = document.getElementById('topbarResPill');
+  const macTitle = document.getElementById('macWindowTitle');
+  if (titleEl && title) {
+    titleEl.textContent = title;
+    titleEl.setAttribute('title', title);
+  }
+  if (macTitle && title) {
+    macTitle.textContent = title;
+  }
+  const dur = Number.isFinite(durationSec) && durationSec > 0 ? durationSec : getVideoDuration();
+  if (durEl && Number.isFinite(dur) && dur > 0) {
+    durEl.textContent = formatTime(dur);
+  }
+  if (resEl && videoWidth && videoHeight) {
+    const resLabel = (videoWidth >= 3840 || videoHeight >= 2160)
+      ? '4K'
+      : (videoWidth >= 2560 || videoHeight >= 1440)
+        ? '2K'
+        : (videoHeight >= 1080 || videoWidth >= 1920)
+          ? '1080p'
+          : `${videoHeight}p`;
+    resEl.textContent = `${resLabel} • 60FPS`;
+  }
+}
+
 function saveState() {
   undoStack.push({
     zoomSegments: JSON.parse(JSON.stringify(zoomSegments)),
@@ -3688,6 +3737,7 @@ function saveState() {
   if (undoStack.length > 50) {
     undoStack.shift();
   }
+  updateUndoRedoButtons();
 }
 
 function undo() {
@@ -3725,6 +3775,7 @@ function undo() {
   updateBlurUI();
   updateTrimUI();
   requestPreviewRedraw();
+  updateUndoRedoButtons();
 }
 
 function redo() {
@@ -3762,6 +3813,7 @@ function redo() {
   updateBlurUI();
   updateTrimUI();
   requestPreviewRedraw();
+  updateUndoRedoButtons();
 }
 
 function showEmptyState() {
@@ -3869,6 +3921,8 @@ async function loadVideoFileDirectly(file) {
   videoLoaded = false;
   isPlaying = false;
   currentVideoBlob = file; // Store for export
+  currentVideoTitle = file.name || 'Imported Video';
+  updateTopbarProjectInfo(currentVideoTitle, 0);
   await loadVideo(url);
 }
 window.loadVideoFileDirectly = loadVideoFileDirectly;
@@ -4073,6 +4127,8 @@ async function loadVideo(url) {
       updateBlurUI();
       updateFaceCamUI();
       updateTrimUI();
+      updateTopbarProjectInfo(currentVideoTitle, videoDuration);
+      updateUndoRedoButtons();
       
       // Ensure the browser decodes and paints the first video frame
       // Automatically skip any initial encoder pre-roll black frames
@@ -8039,6 +8095,7 @@ async function doExport() {
       cleanBrowser: settings.cleanBrowser !== false,
       showBrowserFrame: !settings.cleanBrowser,
       showMacWindowHeader: settings.showMacWindowHeader !== false,
+      windowTitle: currentVideoTitle || 'CursorDemo Screen Recording',
       showShadow: settings.showShadow,
       outputWidth: exportWidth,
       outputHeight: exportHeight,

@@ -1302,15 +1302,19 @@ class VideoProcessor {
   drawMacWindowHeader(windowX, windowY, windowW, headerHeight = 32, radius = 12) {
     this.ctx.save();
     
-    // Draw header background (sleek macOS dark graphite bar)
+    // Draw header background (sleek macOS Sequoia/Sonoma obsidian bar)
     const headerGrad = this.ctx.createLinearGradient(windowX, windowY, windowX, windowY + headerHeight);
-    headerGrad.addColorStop(0, '#2b2a33');
-    headerGrad.addColorStop(1, '#201f25');
+    headerGrad.addColorStop(0, '#1f2026');
+    headerGrad.addColorStop(1, '#16171c');
     this.ctx.fillStyle = headerGrad;
     this.ctx.fillRect(windowX, windowY, windowW, headerHeight);
     
-    // Draw subtle bottom separator line
+    // Draw subtle top highlight line
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    this.ctx.fillRect(windowX, windowY, windowW, 1);
+
+    // Draw subtle bottom separator line
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
     this.ctx.fillRect(windowX, windowY + headerHeight - 1, windowW, 1);
     
     // Draw traffic light circles (🔴 Close, 🟡 Minimize, 🟢 Zoom)
@@ -1322,8 +1326,8 @@ class VideoProcessor {
     
     const dots = [
       { fill: '#ff5f56', border: '#e0443e' }, // Close (Red)
-      { fill: '#ffbd2e', border: '#dea123' }, // Minimize (Yellow)
-      { fill: '#27c93f', border: '#1aab29' }  // Zoom (Green)
+      { fill: '#febc2e', border: '#dea123' }, // Minimize (Yellow)
+      { fill: '#28c840', border: '#1aab29' }  // Zoom (Green)
     ];
     
     dots.forEach((dot, idx) => {
@@ -1340,8 +1344,8 @@ class VideoProcessor {
     // Draw window title centered
     const titleText = (this.settings.windowTitle || 'CursorDemo Screen Recording');
     const fontSize = Math.min(13, Math.max(10, Math.round(headerHeight * 0.36)));
-    this.ctx.font = `500 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    this.ctx.font = `500 ${fontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif`;
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.fillText(titleText, windowX + windowW / 2, centerY);
