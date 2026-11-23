@@ -20,6 +20,13 @@ function debugLog(...args) {
   }
 }
 
+// Studio vector icon helper for clean inline SVG references
+function studioIcon(name, size = 14, extraClass = '', extraStyle = '') {
+  const cls = extraClass ? `studio-icon ${extraClass}` : 'studio-icon';
+  const st = extraStyle ? ` style="${extraStyle}"` : '';
+  return `<svg class="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24"${st} aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
+}
+
 // Retrieve video from IndexedDB (with backward-compatible fallback to legacy CursorFlyVideoStorage)
 function getVideoFromIndexedDBByName(dbName, videoId) {
   return new Promise((resolve, reject) => {
@@ -715,7 +722,7 @@ async function init() {
           currentCameraBlob = camBlob;
           cameraOverlayEnabled = true;
           await loadCameraVideo(camBlob);
-          debugLog('[Editor] ✅ Synchronized Face Cam video loaded from IndexedDB:', candidateCamId, camBlob.size, 'bytes');
+          debugLog('[Editor] Synchronized Face Cam video loaded from IndexedDB:', candidateCamId, camBlob.size, 'bytes');
         }
       } catch (camLoadErr) {
         debugLog('[Editor] No separate camera stream found in IndexedDB for', candidateCamId);
@@ -738,9 +745,9 @@ async function init() {
       boxType === 'styp' || boxType === 'free' || boxType === 'wide';
 
     if (isWebM || isMp4) {
-      debugLog('[Editor] ✅ Reconstructed blob has valid container header:', isWebM ? 'WebM' : `MP4 (${boxType})`);
+      debugLog('[Editor] Reconstructed blob has valid container header:', isWebM ? 'WebM' : `MP4 (${boxType})`);
     } else {
-      console.error('[Editor] ⚠️ Reconstructed blob does NOT have valid WebM/MP4 magic bytes!');
+      console.error('[Editor] Reconstructed blob does NOT have valid WebM/MP4 magic bytes!');
       console.error('[Editor] Expected WebM (1A 45 DF A3) or MP4 (ftyp/moov/mdat), Got:', magicBytes);
       throw new Error('Video blob is corrupted - invalid video container format. Magic bytes: ' + magicBytes);
     }
@@ -995,7 +1002,7 @@ function updateFaceCamUI() {
       sourceBanner.style.background = 'rgba(16, 185, 129, 0.10)';
       sourceBanner.style.borderColor = 'rgba(16, 185, 129, 0.30)';
     }
-    if (sourceText) sourceText.textContent = '🟢 Synchronized 1:1 Face Cam stream active';
+    if (sourceText) sourceText.textContent = 'Synchronized 1:1 Face Cam stream active';
     if (demoBtn) demoBtn.style.display = 'none';
   } else {
     if (statusBadge) statusBadge.textContent = demoWebcamEnabled ? 'PREVIEW CAM ON' : '1:1 STUDIO PIP';
@@ -1008,8 +1015,8 @@ function updateFaceCamUI() {
     }
     if (sourceText) {
       sourceText.textContent = demoWebcamEnabled
-        ? '🟢 Studio 1:1 Preview Cam active — drag bubble on video!'
-        : '🎥 Test draggable 1:1 webcam overlay on stage';
+        ? 'Studio 1:1 Preview Cam active — drag bubble on video!'
+        : 'Test draggable 1:1 webcam overlay on stage';
     }
   }
 
@@ -1549,7 +1556,7 @@ function drawBlurSelectionOverlayOnPreview() {
 
   // Label pill above the selected blur box
   const reg = blurRegions[selectedBlurIndex];
-  const labelText = `💧 Blur #${selectedBlurIndex + 1} (${reg.mode === 'screen' ? 'Screen' : 'Zoom-Synced'})`;
+  const labelText = `Blur #${selectedBlurIndex + 1} (${reg.mode === 'screen' ? 'Screen' : 'Zoom-Synced'})`;
   ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
   const tw = ctx.measureText(labelText).width + 14;
   const th = 20;
@@ -1618,7 +1625,7 @@ function addBlurRegion(customProps = {}) {
   selectBlur(newIdx, { seek: false });
   updateBlurUI();
   requestPreviewRedraw();
-  showToast('💧 Added Manual Blur — drag or resize on video');
+  showToast('Added Manual Blur — drag or resize on video');
   return newIdx;
 }
 
@@ -1692,7 +1699,9 @@ function syncDrawBlurModeButtonUI() {
     btn.style.background = isDrawBlurMode ? 'rgba(6, 182, 212, 0.24)' : '';
     btn.style.borderColor = isDrawBlurMode ? '#22d3ee' : '';
     btn.style.color = isDrawBlurMode ? '#ecfeff' : '';
-    btn.textContent = isDrawBlurMode ? '🎯 Click & Drag on Video...' : '✏️ Draw on Video';
+    btn.innerHTML = isDrawBlurMode
+      ? `${studioIcon('target', 12, '', 'color:#22d3ee;margin-right:4px;')}<span>Click &amp; Drag on Video...</span>`
+      : `${studioIcon('pencil', 12, '', 'color:#22d3ee;margin-right:4px;')}<span>Draw on Video</span>`;
   });
   if (previewCanvas) {
     previewCanvas.style.cursor = isDrawBlurMode ? 'crosshair' : 'default';
@@ -1720,7 +1729,7 @@ function deleteSelectedBlur() {
   }
   updateBlurUI();
   requestPreviewRedraw();
-  showToast('🗑️ Deleted Manual Blur');
+  showToast('Deleted Manual Blur');
 }
 
 function duplicateSelectedBlur() {
@@ -1786,7 +1795,12 @@ function renderBlurSegments() {
 
     const label = document.createElement('span');
     label.style.pointerEvents = 'none';
-    label.textContent = widthPct > 6 ? `💧 Blur #${idx + 1}` : '💧';
+    label.style.display = 'inline-flex';
+    label.style.alignItems = 'center';
+    label.style.gap = '3px';
+    label.innerHTML = widthPct > 6
+      ? `${studioIcon('mask', 11, '', 'color:#22d3ee;')}<span>Blur #${idx + 1}</span>`
+      : `${studioIcon('mask', 11, '', 'color:#22d3ee;')}`;
     pill.appendChild(label);
 
     pill.addEventListener('mousedown', (e) => {
@@ -1827,7 +1841,7 @@ function updateBlurList() {
     const styleBadge = reg.style === 'pixelate' ? 'Mosaic' : (reg.style === 'solid' ? 'Redacted' : 'Frosted');
     item.innerHTML = `
       <div style="display:flex;align-items:center;gap:7px;">
-        <span style="color:#22d3ee;font-weight:700;">💧 #${idx + 1}</span>
+        <span style="color:#22d3ee;font-weight:700;display:inline-flex;align-items:center;gap:4px;">${studioIcon('mask', 11, '', 'color:#22d3ee;')} #${idx + 1}</span>
         <span style="font-family:var(--font-mono);font-size:10.5px;color:var(--text-secondary);">${timeLabel}</span>
         <span style="font-size:9.5px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.06);color:var(--text-muted);">${styleBadge}</span>
       </div>
@@ -2556,9 +2570,9 @@ function setupEventListeners() {
     requestPreviewRedraw();
     if (this.checked) {
       if (!cursorData || cursorData.length === 0) {
-        showToast('⚠️ No cursor telemetry in this video (recorded on internal/restricted tab). Record a standard website (https://) to track cursor.');
+        showToast('No cursor telemetry in this video (recorded on internal/restricted tab). Record a standard website (https://) to track cursor.');
       } else {
-        showToast('🌟 Cursor Highlight enabled — visible in preview & export');
+        showToast('Cursor Highlight enabled — visible in preview & export');
       }
     }
   });
@@ -2664,7 +2678,7 @@ function setupEventListeners() {
         isDrawBlurMode = !isDrawBlurMode;
         syncDrawBlurModeButtonUI();
         if (isDrawBlurMode) {
-          showToast('✏️ Click and drag on the video preview to draw a blur box');
+          showToast(`${studioIcon('pencil', 16)} Click and drag on the video preview to draw a blur box`);
         }
       });
     }
@@ -2756,9 +2770,9 @@ function setupEventListeners() {
     demoWebcamEnabled = !demoWebcamEnabled;
     if (demoWebcamEnabled) {
       settings.showWebcam = true;
-      showToast('🎥 Studio 1:1 Preview Cam enabled — drag bubble anywhere on stage!');
+      showToast('Studio 1:1 Preview Cam enabled — drag bubble anywhere on stage');
     } else {
-      showToast('🎥 Studio Preview Cam disabled');
+      showToast('Studio Preview Cam disabled');
     }
     updateFaceCamUI();
     requestPreviewRedraw();
@@ -2788,10 +2802,10 @@ function setupEventListeners() {
     _webcamDodgeY = null;
     _isWebcamCurrentlyDodged = false;
     const modeNames = {
-      'float': '📌 Fixed Position (Webcam stays locked at 1:1 size)',
-      'floating': '📌 Fixed Position (Webcam stays locked at 1:1 size)',
-      'smart-dodge': '✨ Smart Dodge (Webcam avoids zoomed cursor)',
-      'zoom-with-screen': '🔍 Zoom With Screen (Scales together)'
+      'float': 'Fixed Position (Webcam stays locked at 1:1 size)',
+      'floating': 'Fixed Position (Webcam stays locked at 1:1 size)',
+      'smart-dodge': 'Smart Dodge (Webcam avoids zoomed cursor)',
+      'zoom-with-screen': 'Zoom With Screen (Scales together)'
     };
     showToast(modeNames[this.value] || 'Updated Webcam Zoom Mode');
     requestPreviewRedraw();
@@ -2841,7 +2855,7 @@ function setupEventListeners() {
       _webcamDodgeY = null;
       updateFaceCamUI();
       requestPreviewRedraw();
-      showToast('📹 Snapped Face Cam to Bottom Right');
+      showToast('Snapped Face Cam to Bottom Right');
     });
   });
 
@@ -3041,7 +3055,7 @@ function setupEventListeners() {
           trimHandles.start = Math.max(0, Math.min(trimHandles.end - 0.05, video.currentTime / dur));
           updateTrimUI();
           requestPreviewRedraw();
-          showToast(`✂️ Set Trim Start at ${formatTimeShort(video.currentTime)} (I)`);
+          showToast(`Set Trim Start at ${formatTimeShort(video.currentTime)} (I)`);
         }
         break;
       case 'KeyO':
@@ -3050,7 +3064,7 @@ function setupEventListeners() {
           trimHandles.end = Math.min(1, Math.max(trimHandles.start + 0.05, video.currentTime / dur));
           updateTrimUI();
           requestPreviewRedraw();
-          showToast(`✂️ Set Trim End at ${formatTimeShort(video.currentTime)} (O)`);
+          showToast(`Set Trim End at ${formatTimeShort(video.currentTime)} (O)`);
         }
         break;
       case 'KeyS':
@@ -3186,7 +3200,7 @@ function setupDragInteractions() {
       trimHandles.start = Math.max(0, Math.min(trimHandles.end - 0.05, video.currentTime / dur));
       updateTrimUI();
       requestPreviewRedraw();
-      showToast(`✂️ Trim Start jumped to ${formatTimeShort(video.currentTime)}`);
+      showToast(`Trim Start jumped to ${formatTimeShort(video.currentTime)}`);
     }
   });
 
@@ -3198,7 +3212,7 @@ function setupDragInteractions() {
       trimHandles.end = Math.min(1, Math.max(trimHandles.start + 0.05, video.currentTime / dur));
       updateTrimUI();
       requestPreviewRedraw();
-      showToast(`✂️ Trim End jumped to ${formatTimeShort(video.currentTime)}`);
+      showToast(`Trim End jumped to ${formatTimeShort(video.currentTime)}`);
     }
   });
 
@@ -3473,7 +3487,9 @@ function handleDrag(e) {
       pill.style.width = `${widthPct}%`;
       const label = pill.querySelector('.zoom-pill-label');
       if (label) {
-        const modeIcon = seg.mode === 'fixed' ? '📍' : '🎯';
+        const modeIcon = seg.mode === 'fixed'
+          ? studioIcon('pin', 10, '', 'color:#d8b4fe;vertical-align:-1px;')
+          : studioIcon('target', 10, '', 'color:#a5b4fc;vertical-align:-1px;');
         const rawLevel = seg.zoomLevel || zoomDepths[settings.zoomDepth] || 1.75;
         const level = Number.isInteger(Number(rawLevel.toFixed(1))) ? rawLevel.toFixed(1) : (+rawLevel.toFixed(2)).toString();
         const iconSpan = `<span class="zoom-pill-mode-icon" title="Click to toggle Follow/Fixed">${modeIcon}</span>`;
@@ -3516,7 +3532,9 @@ function handleDrag(e) {
       pill.style.width = `${widthPct}%`;
       const label = pill.querySelector('.zoom-pill-label');
       if (label) {
-        const modeIcon = seg.mode === 'fixed' ? '📍' : '🎯';
+        const modeIcon = seg.mode === 'fixed'
+          ? studioIcon('pin', 10, '', 'color:#d8b4fe;vertical-align:-1px;')
+          : studioIcon('target', 10, '', 'color:#a5b4fc;vertical-align:-1px;');
         const rawLevel = seg.zoomLevel || zoomDepths[settings.zoomDepth] || 1.75;
         const level = Number.isInteger(Number(rawLevel.toFixed(1))) ? rawLevel.toFixed(1) : (+rawLevel.toFixed(2)).toString();
         const iconSpan = `<span class="zoom-pill-mode-icon" title="Click to toggle Follow/Fixed">${modeIcon}</span>`;
@@ -4360,7 +4378,7 @@ function analyzeZoom() {
   analyzer.ZOOM_LEVEL = zoomDepths[settings.zoomDepth];
   const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
   zoomSegments = analyzer.analyzeClicks(cursorData, videoWidth, videoHeight, displaySurface, currentDur, browserUIHeight);
-  debugLog('[Editor] ✅ Found', zoomSegments.length, 'zoom segments across duration:', currentDur);
+  debugLog('[Editor] Found', zoomSegments.length, 'zoom segments across duration:', currentDur);
   
   updateZoomUI();
 }
@@ -4415,7 +4433,9 @@ function openQuickZoomPopover(segIndex, anchorEl, clientX, clientY) {
   
   if (toggleBtn) {
     const isFixed = seg.mode === 'fixed';
-    toggleBtn.innerHTML = isFixed ? '📍 Fixed Spot' : '🎯 Follow Cursor';
+    toggleBtn.innerHTML = isFixed
+      ? `${studioIcon('pin', 12, '', 'color:#d8b4fe;margin-right:4px;')} Fixed Spot`
+      : `${studioIcon('target', 12, '', 'color:#a5b4fc;margin-right:4px;')} Follow Cursor`;
     toggleBtn.style.color = isFixed ? '#d8b4fe' : '#a5b4fc';
     toggleBtn.style.borderColor = isFixed ? 'rgba(168, 85, 247, 0.4)' : 'rgba(99, 102, 241, 0.4)';
   }
@@ -4544,13 +4564,15 @@ function openTimelineContextMenu(segIndex, clientX, clientY, contextType = 'segm
     const level = (seg.zoomLevel || zoomDepths[settings.zoomDepth] || 1.75).toFixed(2);
     
     if (titleEl) titleEl.textContent = `Zoom Segment #${segIndex + 1} (${level}×)`;
-    if (toggleText) toggleText.textContent = isFixed ? '🎯 Switch to Follow Cursor' : '📍 Switch to Fixed Spot';
+    if (toggleText) toggleText.innerHTML = isFixed
+      ? `${studioIcon('target', 12, '', 'color:#a5b4fc;margin-right:4px;')} Switch to Follow Cursor`
+      : `${studioIcon('pin', 12, '', 'color:#d8b4fe;margin-right:4px;')} Switch to Fixed Spot`;
     if (toggleBtn) toggleBtn.style.display = 'flex';
     if (deleteBtn) deleteBtn.style.display = 'flex';
     if (editZoomBtn) {
       editZoomBtn.style.display = 'flex';
       const labelSpan = editZoomBtn.querySelector('span');
-      if (labelSpan) labelSpan.textContent = `🔍 Edit Zoom Amount (${level}×)...`;
+      if (labelSpan) labelSpan.innerHTML = `${studioIcon('zoom', 12, '', 'margin-right:4px;')} Edit Zoom Amount (${level}×)...`;
     }
     if (chipsSection) chipsSection.style.display = 'block';
     
@@ -4565,13 +4587,13 @@ function openTimelineContextMenu(segIndex, clientX, clientY, contextType = 'segm
   } else {
     // Empty timeline / editor canvas outside a zoom segment
     if (titleEl) titleEl.textContent = 'Editor & Timeline Actions';
-    if (toggleText) toggleText.textContent = '📍 Add Fixed Zoom at Playhead';
+    if (toggleText) toggleText.innerHTML = `${studioIcon('pin', 12, '', 'color:#d8b4fe;margin-right:4px;')} Add Fixed Zoom at Playhead`;
     if (toggleBtn) toggleBtn.style.display = 'flex';
     if (deleteBtn) deleteBtn.style.display = 'none';
     if (editZoomBtn) {
       editZoomBtn.style.display = 'flex';
       const labelSpan = editZoomBtn.querySelector('span');
-      if (labelSpan) labelSpan.textContent = '➕ Add Zoom at Playhead (Follow)';
+      if (labelSpan) labelSpan.innerHTML = `${studioIcon('target', 12, '', 'color:#a5b4fc;margin-right:4px;')} Add Zoom at Playhead (Follow)`;
     }
     if (chipsSection) chipsSection.style.display = 'none';
   }
@@ -4699,10 +4721,12 @@ function setupZoomEditControls() {
     updateZoomUI();
     requestPreviewRedraw();
     const isFixed = seg.mode === 'fixed';
-    this.innerHTML = isFixed ? '📍 Fixed Spot' : '🎯 Follow Cursor';
+    this.innerHTML = isFixed
+      ? `${studioIcon('pin', 12, '', 'color:#d8b4fe;margin-right:4px;')} Fixed Spot`
+      : `${studioIcon('target', 12, '', 'color:#a5b4fc;margin-right:4px;')} Follow Cursor`;
     this.style.color = isFixed ? '#d8b4fe' : '#a5b4fc';
     this.style.borderColor = isFixed ? 'rgba(168, 85, 247, 0.4)' : 'rgba(99, 102, 241, 0.4)';
-    showToast(isFixed ? '📍 Switched to Fixed Spot mode' : '🎯 Switched to Follow Cursor mode');
+    showToast(isFixed ? 'Switched to Fixed Spot mode' : 'Switched to Follow Cursor mode');
   });
 
   doneBtn?.addEventListener('click', (e) => {
@@ -4722,7 +4746,7 @@ function setupZoomEditControls() {
       if (activeContextMenuSegIndex >= 0 && activeContextMenuSegIndex < zoomSegments.length) {
         saveState();
         setSegmentZoomLevel(activeContextMenuSegIndex, targetZoom, false);
-        showToast(`🔍 Zoom set to ${targetZoom.toFixed(2)}×`);
+        showToast(`Zoom set to ${targetZoom.toFixed(2)}×`);
       }
       closeTimelineContextMenu();
     });
@@ -4741,7 +4765,7 @@ function setupZoomEditControls() {
     } else {
       closeTimelineContextMenu();
       addZoomAtCurrentTime('follow');
-      showToast('➕ Added Follow Zoom at Playhead');
+      showToast('Added Follow Zoom at Playhead');
     }
   });
 
@@ -4756,10 +4780,10 @@ function setupZoomEditControls() {
       selectZoom(activeContextMenuSegIndex);
       updateZoomUI();
       requestPreviewRedraw();
-      showToast(seg.mode === 'fixed' ? '📍 Switched to Fixed Spot mode' : '🎯 Switched to Follow Cursor mode');
+      showToast(seg.mode === 'fixed' ? 'Switched to Fixed Spot mode' : 'Switched to Follow Cursor mode');
     } else {
       addZoomAtCurrentTime('fixed');
-      showToast('📍 Added Fixed Spot Zoom at Playhead');
+      showToast('Added Fixed Spot Zoom at Playhead');
     }
     closeTimelineContextMenu();
   });
@@ -4783,7 +4807,7 @@ function setupZoomEditControls() {
         selectedZoomIndex--;
       }
       updateZoomUI();
-      showToast('🗑️ Deleted zoom segment');
+      showToast(`${studioIcon('trash', 16)} Deleted zoom segment`);
     }
     closeTimelineContextMenu();
   });
@@ -4858,7 +4882,9 @@ function renderZoomSegments() {
     
     const rawLevel = (seg.zoomLevel || zoomDepths[settings.zoomDepth] || 1.75);
     const level = rawLevel.toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1');
-    const modeIcon = seg.mode === 'fixed' ? '📍' : '🎯';
+    const modeIcon = seg.mode === 'fixed'
+      ? studioIcon('pin', 10, '', 'color:#d8b4fe;vertical-align:-1px;')
+      : studioIcon('target', 10, '', 'color:#a5b4fc;vertical-align:-1px;');
     pill.title = `Zoom ${level}× [${seg.mode || 'follow'}] (${formatTimeShort(startSec)} - ${formatTimeShort(endSec)}) • Double-click or right-click to edit zoom amount`;
     
     // Left drag handle (adjusts start time)
@@ -4894,7 +4920,7 @@ function renderZoomSegments() {
         renderZoomSegments();
         updateZoomList();
         requestPreviewRedraw();
-        showToast(seg.mode === 'fixed' ? '📍 Switched to Fixed Spot mode' : '🎯 Switched to Follow Cursor mode');
+        showToast(seg.mode === 'fixed' ? 'Switched to Fixed Spot mode' : 'Switched to Follow Cursor mode');
       });
     }
 
@@ -5264,7 +5290,7 @@ function deleteSelectedZoom() {
     zoomSegments.splice(selectedZoomIndex, 1);
     deselectAllZooms();
     updateZoomUI();
-    showToast('🗑️ Deleted zoom segment');
+    showToast('Deleted zoom segment');
   }
 }
 
@@ -5273,7 +5299,7 @@ function showToast(message, durationMs = 2400) {
   const toast = document.getElementById('editorToast');
   if (!toast) return;
   toast.style.pointerEvents = '';
-  toast.textContent = message;
+  toast.innerHTML = message;
   toast.classList.remove('hidden');
   if (_toastTimeout) clearTimeout(_toastTimeout);
   _toastTimeout = setTimeout(() => {
@@ -5283,7 +5309,7 @@ function showToast(message, durationMs = 2400) {
 
 function splitAtPlayhead() {
   if (!video || !videoLoaded) {
-    showToast('⚠️ No video loaded to split');
+    showToast('No video loaded to split');
     return;
   }
   const dur = getVideoDuration();
@@ -5353,21 +5379,21 @@ function splitAtPlayhead() {
     zoomSegments.splice(segIdx + 1, 0, newSeg);
     selectZoom(segIdx + 1);
     updateZoomUI();
-    showToast(`✂️ Split zoom segment at ${formatTimeShort(currentMs / 1000)} (S)`);
+    showToast(`Split zoom segment at ${formatTimeShort(currentMs / 1000)} (S)`);
     return;
   }
   
   // 2. If playhead is over a segment but within 150ms of its edges
   const edgeIdx = zoomSegments.findIndex(s => currentMs >= s.startTime && currentMs <= s.endTime);
   if (edgeIdx >= 0) {
-    showToast('⚠️ Playhead too close to segment edge to split (<0.15s)');
+    showToast('Playhead too close to segment edge to split (<0.15s)');
     return;
   }
   
   // 3. If outside existing zoom segments, create a new zoom cut at playhead
   saveState();
   addZoomAtCurrentTime('follow');
-  showToast(`✂️ Created new zoom cut at ${formatTimeShort(video.currentTime)}`);
+  showToast(`Created new zoom cut at ${formatTimeShort(video.currentTime)}`);
 }
 
 function updateZoomList() {
@@ -5406,7 +5432,7 @@ function updateZoomList() {
     `;
 
     const modeBadge = `
-      <button type="button" class="zoom-mode-toggle-btn" data-index="${i}" title="Mode: ${isFixed ? '📍 Fixed Spot' : '🎯 Follow Cursor'}. Click to switch to ${isFixed ? '🎯 Follow' : '📍 Fixed Spot'}." style="
+      <button type="button" class="zoom-mode-toggle-btn" data-index="${i}" title="Mode: ${isFixed ? 'Fixed Spot' : 'Follow Cursor'}. Click to switch to ${isFixed ? 'Follow' : 'Fixed Spot'}." style="
         font-size: 10px;
         background: ${isFixed ? 'rgba(168, 85, 247, 0.2)' : 'rgba(99, 102, 241, 0.2)'};
         color: ${isFixed ? '#d8b4fe' : '#a5b4fc'};
@@ -5417,11 +5443,11 @@ function updateZoomList() {
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 3px;
+        gap: 4px;
         transition: all 0.15s ease;
       ">
-        <span>${isFixed ? '📍 Fixed' : '🎯 Follow'}</span>
-        <span style="font-size: 8px; opacity: 0.75;">⇄</span>
+        ${isFixed ? studioIcon('pin', 10, '', 'color:#d8b4fe;') : studioIcon('target', 10, '', 'color:#a5b4fc;')}
+        <span>${isFixed ? 'Fixed' : 'Follow'}</span>
       </button>
     `;
 
@@ -5441,7 +5467,7 @@ function updateZoomList() {
         gap: 2px;
       ">
         <span>${level}×</span>
-        <span style="font-size: 8px; opacity: 0.7;">✎</span>
+        <span style="display: inline-flex; align-items: center; opacity: 0.7;">${studioIcon('pencil', 10)}</span>
       </button>
     `;
 
@@ -5691,7 +5717,7 @@ function updateTimeline() {
       const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
       const zoomState = analyzer.getZoomAtTime(currentMsTime, zoomSegments, videoWidth, videoHeight, browserUIHeight);
       if (zoomState.active && zoomState.level > 1.01) {
-        activeIndicator.textContent = `🔍 ${zoomState.level.toFixed(2)}× Zoom`;
+        activeIndicator.innerHTML = `${studioIcon('zoom', 11, '', 'margin-right:3px;')} ${zoomState.level.toFixed(2)}× Zoom`;
         activeIndicator.style.display = 'inline-flex';
       } else {
         activeIndicator.style.display = 'none';
@@ -6038,7 +6064,7 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   ctx.stroke();
   
   // 6. Screen Studio-style floating target badge (clamped inside canvas so edge/corner targets never clip)
-  const labelText = '📍 Purple Focal Target (drag to position)';
+  const labelText = 'Focal Target (drag to position)';
   ctx.font = '600 11px system-ui, -apple-system, sans-serif';
   const textMetrics = ctx.measureText(labelText);
   const badgeW = textMetrics.width + 18;
@@ -6606,7 +6632,7 @@ function setupCanvasFocalInteractions() {
       if (didResize) {
         updateFaceCamUI();
         requestPreviewRedraw();
-        showToast(`📹 Webcam scale set to ${Math.round((Number(settings.webcamScale) || 1) * 100)}%`);
+        showToast(`${studioIcon('camera', 16)} Webcam scale set to ${Math.round((Number(settings.webcamScale) || 1) * 100)}%`);
       }
     }
     if (isDraggingWebcamBubble) {
@@ -6619,7 +6645,7 @@ function setupCanvasFocalInteractions() {
         requestPreviewRedraw();
         const pctX = Math.round((settings.webcamCustomX ?? 0.82) * 100);
         const pctY = Math.round((settings.webcamCustomY ?? 0.80) * 100);
-        showToast(`📹 Webcam positioned at X: ${pctX}%, Y: ${pctY}%`);
+        showToast(`${studioIcon('camera', 16)} Webcam positioned at X: ${pctX}%, Y: ${pctY}%`);
       }
     }
     if (isDraggingBlurBox || isResizingBlurBox) {
@@ -6641,7 +6667,7 @@ function setupCanvasFocalInteractions() {
         const srcH = Math.max(1, videoHeight - srcY);
         const pctX = Math.round(Math.max(0, Math.min(1, (seg.centerX ?? (videoWidth / 2)) / Math.max(1, videoWidth))) * 100);
         const pctY = Math.round(Math.max(0, Math.min(1, ((seg.centerY ?? (srcY + srcH / 2)) - srcY) / srcH)) * 100);
-        showToast(`📍 Locked Fixed Spot: X: ${pctX}%, Y: ${pctY}%`);
+        showToast(`Locked Fixed Spot: X: ${pctX}%, Y: ${pctY}%`);
       }
     }
   });
@@ -7401,12 +7427,12 @@ function showDiscordModal(options = {}) {
 
   if (badge) {
     if (isCrash) {
-      badge.textContent = '⚠️ Issue Detected — Instant Support';
+      badge.textContent = 'Issue Detected — Instant Support';
     } else if (mode === 'milestone') {
       const cnt = options.exportCount || 3;
-      badge.textContent = `🎉 Creator Milestone • Download #${cnt}`;
+      badge.textContent = `Creator Milestone • Download #${cnt}`;
     } else {
-      badge.textContent = '💬 CursorDemo Community';
+      badge.textContent = 'CursorDemo Community';
     }
   }
 
@@ -7424,8 +7450,8 @@ function showDiscordModal(options = {}) {
 
   if (joinBtnText) {
     joinBtnText.textContent = isCrash
-      ? '💬 Join Discord for Instant Support & Fixes →'
-      : '💬 Join Discord for Support & Feature Requests →';
+      ? 'Join Discord for Instant Support & Fixes →'
+      : 'Join Discord for Support & Feature Requests →';
   }
 
   if (exportSummaryBox) {
@@ -7456,8 +7482,8 @@ function showDiscordModal(options = {}) {
       crashBox.classList.remove('hidden');
       if (crashTitle) {
         crashTitle.textContent = options.reason
-          ? `⚠️ Diagnostic Report (${options.reason})`
-          : '⚠️ Issue Detected — Diagnostic Info';
+          ? `Diagnostic Report (${options.reason})`
+          : 'Issue Detected — Diagnostic Info';
       }
       if (crashSummary) {
         crashSummary.textContent = options.summary || options.error ||
@@ -7522,9 +7548,9 @@ function setupDiscordModal() {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(payload);
       }
-      copyBtn.textContent = '✅ Copied!';
+      copyBtn.textContent = 'Copied!';
       setTimeout(() => {
-        copyBtn.textContent = '📋 Copy Error Details';
+        copyBtn.textContent = 'Copy Error Details';
       }, 2000);
     } catch (_) {}
   });
@@ -7546,7 +7572,7 @@ function setupDiscordModal() {
     }
     setTimeout(() => {
       closeDiscordModal(false);
-      showToast('💬 Opening CursorDemo Discord — welcome!');
+      showToast('Opening CursorDemo Discord — welcome!');
     }, 150);
   });
 
@@ -7605,11 +7631,11 @@ if (typeof window !== 'undefined') {
 let selectedReviewRating = 5;
 
 const REVIEW_RATING_CAPTIONS = {
-  5: '5/5 — Love CursorDemo Studio! ❤️',
-  4: '4/5 — Great screen recorder! ✨',
-  3: '3/5 — Good, could be even better 💡',
-  2: '2/5 — Had some issues 🔧',
-  1: '1/5 — Needs improvement 🛠️'
+  5: '5/5 — Love CursorDemo Studio!',
+  4: '4/5 — Great screen recorder!',
+  3: '3/5 — Good, could be even better',
+  2: '2/5 — Had some issues',
+  1: '1/5 — Needs improvement'
 };
 
 function getChromeStoreReviewUrl() {
@@ -7655,10 +7681,10 @@ function updateReviewModalRatingUI(rating) {
 
   if (ctaBtn) {
     if (rating >= 4) {
-      ctaBtn.textContent = '⭐ Leave a Quick Chrome Web Store Review →';
+      ctaBtn.innerHTML = `${studioIcon('star', 16)} Leave a Quick Chrome Web Store Review →`;
       ctaBtn.setAttribute('href', getChromeStoreReviewUrl());
     } else {
-      ctaBtn.textContent = '💬 Share Feedback & Suggestions →';
+      ctaBtn.textContent = 'Share Feedback & Suggestions →';
       ctaBtn.setAttribute('href', getFeedbackIssueUrl(rating));
     }
   }
@@ -7699,7 +7725,7 @@ function showPostDownloadModal(summary = {}) {
   if (subtitleEl) {
     const count = summary.exportCount || 1;
     subtitleEl.textContent = count === 1
-      ? '🎉 First studio video exported • Saved to Downloads'
+      ? 'First studio video exported • Saved to Downloads'
       : `Saved to your computer • Export #${count} complete`;
   }
 
@@ -7773,7 +7799,7 @@ function setupReviewModal() {
     }
     setTimeout(() => {
       closePostDownloadModal(true);
-      showToast('💚 Thank you for supporting CursorDemo Studio!');
+      showToast('Thank you for supporting CursorDemo Studio!');
     }, 150);
   });
 
@@ -7821,7 +7847,7 @@ async function doExport() {
   
   try {
     confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '⏳ Initializing...';
+    confirmBtn.textContent = 'Initializing...';
     
     let blob = (currentVideoBlob && currentVideoBlob.size > 0) ? currentVideoBlob : null;
     if (!blob) {
@@ -7857,7 +7883,7 @@ async function doExport() {
           if (recovered && recovered.size > 0) {
             blob = recovered;
             currentVideoBlob = recovered;
-            debugLog('[Editor] ✅ Successfully recovered video blob from IndexedDB:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
+            debugLog('[Editor] Successfully recovered video blob from IndexedDB:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
           }
         } catch (idbErr) {
           console.warn('[Editor] IndexedDB recovery error:', idbErr);
@@ -8063,7 +8089,7 @@ async function doExport() {
       exportZoomSegments, 
       function(progress) {
         const pct = Math.round(progress);
-        confirmBtn.innerHTML = '⏳ Processing ' + pct + '%';
+        confirmBtn.innerHTML = 'Processing ' + pct + '%';
         if (progressFill) progressFill.style.width = pct + '%';
         if (progressPct) progressPct.textContent = pct + '%';
         if (progressStatus) {
@@ -8077,7 +8103,7 @@ async function doExport() {
       cursorData
     );
     
-    debugLog('[Editor] ✅ Processing complete');
+    debugLog('[Editor] Processing complete');
 
     if (!processed || !processed.size || processed.size === 0) {
       throw new Error('Exported video file is empty or corrupted (0 bytes).');
@@ -8091,7 +8117,7 @@ async function doExport() {
     if (progressFill) progressFill.style.width = '100%';
     if (progressPct) progressPct.textContent = '100%';
     if (progressStatus) progressStatus.textContent = 'Saving your file...';
-    confirmBtn.innerHTML = '⏳ Saving...';
+    confirmBtn.innerHTML = 'Saving...';
     const url = URL.createObjectURL(processed);
     const downloadFileName = `cursordemo-${Date.now()}.${fileExtension}`;
     const outputSizeMB = (processed.size / 1024 / 1024).toFixed(2);
@@ -8107,8 +8133,8 @@ async function doExport() {
       URL.revokeObjectURL(url);
     }, 60000);
     
-    if (progressStatus) progressStatus.textContent = '✅ Download started!';
-    confirmBtn.innerHTML = '✅ Export Complete!';
+    if (progressStatus) progressStatus.textContent = 'Download started!';
+    confirmBtn.innerHTML = `${studioIcon('check', 18)} Export Complete!`;
 
     try {
       localStorage.removeItem('cursordemo.exportInProgress');
@@ -8145,7 +8171,7 @@ async function doExport() {
       if (progressOverlay) progressOverlay.classList.add('hidden');
       
       confirmBtn.disabled = false;
-      confirmBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Export';
+      confirmBtn.innerHTML = `${studioIcon('export', 18)} Export`;
 
       if (shouldShowDiscordMilestone) {
         showDiscordModal({
@@ -8169,7 +8195,7 @@ async function doExport() {
           exportCount
         });
       } else {
-        showToast(`✅ Downloaded ${downloadFileName} (${outputSizeMB} MB)`);
+        showToast(`${studioIcon('check', 16)} Downloaded ${downloadFileName} (${outputSizeMB} MB)`);
       }
     }, 2000);
     
@@ -8205,7 +8231,7 @@ async function doExport() {
     });
     
     confirmBtn.disabled = false;
-    confirmBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Export';
+    confirmBtn.innerHTML = `${studioIcon('export', 18)} Export`;
   }
 }
 
