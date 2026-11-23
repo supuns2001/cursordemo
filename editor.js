@@ -111,6 +111,7 @@ let undoStack = [];
 let redoStack = [];
 let cameraOverlayEnabled = false; // Store camera overlay flag at module level
 let currentVideoBlob = null; // Store active video blob for export
+let currentVideoId = null; // Store active IndexedDB videoId for recovery
 let currentCameraBlob = null; // Store active synchronized webcam blob for preview & export
 let cameraVideo = null; // Offscreen video element for Face Cam compositing
 let cameraVideoLoaded = false;
@@ -291,21 +292,23 @@ document.addEventListener('DOMContentLoaded', function() {
   video = document.getElementById('video');
   previewCanvas = document.getElementById('previewCanvas');
   playBtn = document.getElementById('playBtn');
-  currentTimeEl = document.getElementById('currentTime');
+  trimmedLeft = document.getElementById('trimmedLeft');
+  trimmedRight = document.getElementById('trimmedRight');
+  trimOverlayStart = document.getElementById('trimOverlayStart') || trimmedLeft;
+  trimOverlayEnd = document.getElementById('trimOverlayEnd') || trimmedRight;
+  timeMarkers = document.getElementById('timeMarkers');
+  timeDisplay = document.getElementById('timeDisplay');
+  currentTimeEl = document.getElementById('currentTime') || timeDisplay;
   currentTimeMsEl = document.getElementById('currentTimeMs');
   totalTimeEl = document.getElementById('totalTime');
   totalTimeMsEl = document.getElementById('totalTimeMs');
   timelineTrack = document.getElementById('timelineTrack');
-  timelinePlayhead = document.getElementById('timelinePlayhead');
+  timelinePlayhead = document.getElementById('timelinePlayhead') || playheadElement;
   playheadElement = document.getElementById('playhead');
   zoomSegmentsLayer = document.getElementById('zoomSegmentsLayer');
   timelineRuler = document.getElementById('timelineRuler');
   trimStartScissor = document.getElementById('trimStartScissor');
   trimEndScissor = document.getElementById('trimEndScissor');
-  trimOverlayStart = document.getElementById('trimOverlayStart');
-  trimOverlayEnd = document.getElementById('trimOverlayEnd');
-  trimmedLeft = document.getElementById('trimmedLeft');
-  trimmedRight = document.getElementById('trimmedRight');
   timeMarkers = document.getElementById('timeMarkers');
   timeDisplay = document.getElementById('timeDisplay');
   leftLabel = document.getElementById('leftLabel');
@@ -624,11 +627,30 @@ async function init() {
     debugLog('[Editor] Cursor data points:', cursorData.length, 'Surface:', displaySurface);
     const clicks = cursorData.filter(d => d.type === 'click' || d.type === 'doubleclick');
     debugLog('[Editor] Click events:', clicks.length);
+
+    const clickToggleRow = document.getElementById('clickEnabled')?.closest('.setting-row');
+    if (clickToggleRow) {
+      if (clicks.length === 0) {
+        clickToggleRow.setAttribute('title', 'No click telemetry recorded for this capture (click ripples require recording in a supported browser tab: https://).');
+      } else {
+        clickToggleRow.removeAttribute('title');
+      }
+    }
+
+    const cursorHlToggleRow = document.getElementById('cursorHighlightEnabled')?.closest('.setting-row');
+    if (cursorHlToggleRow) {
+      if (cursorData.length === 0) {
+        cursorHlToggleRow.setAttribute('title', 'No cursor movement telemetry recorded for this capture (cursor highlight requires recording in a supported browser tab: https://).');
+      } else {
+        cursorHlToggleRow.removeAttribute('title');
+      }
+    }
     
     let blob;
     
     // Check if video is stored in IndexedDB
     if (response.videoStoredInIndexedDB && typeof response.videoData === 'string' && !response.videoData.startsWith('data:')) {
+      currentVideoId = response.videoData;
       // Video is in IndexedDB - retrieve it
       debugLog('[Editor] Video stored in IndexedDB, retrieving with ID:', response.videoData);
       try {
@@ -2533,7 +2555,11 @@ function setupEventListeners() {
     }
     requestPreviewRedraw();
     if (this.checked) {
-      showToast('🌟 Cursor Highlight enabled — visible in preview & export');
+      if (!cursorData || cursorData.length === 0) {
+        showToast('⚠️ No cursor telemetry in this video (recorded on internal/restricted tab). Record a standard website (https://) to track cursor.');
+      } else {
+        showToast('🌟 Cursor Highlight enabled — visible in preview & export');
+      }
     }
   });
 
@@ -7797,7 +7823,52 @@ async function doExport() {
     confirmBtn.disabled = true;
     confirmBtn.innerHTML = '⏳ Initializing...';
     
-    const blob = currentVideoBlob || await fetch(video.src).then(r => r.blob());
+    let blob = (currentVideoBlob && currentVideoBlob.size > 0) ? currentVideoBlob : null;
+    if (!blob) {
+      if (video && video.src && video.src.startsWith('blob:')) {
+        try {
+          blob = await fetch(video.src).then(r => r.blob());
+        } catch (fetchErr) {
+          debugLog('[Editor] fetch(video.src) failed, attempting fallback recovery:', fetchErr);
+        }
+      }
+    }
+
+    // Fallback recovery: if in-memory blob or blob URL failed/revoked, recover directly from IndexedDB
+    if (!blob || blob.size === 0) {
+      let vidId = currentVideoId;
+      if (!vidId) {
+        try {
+          vidId = new URLSearchParams(window.location.search).get('videoId');
+        } catch (_) {}
+      }
+      if (!vidId) {
+        try {
+          if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+            const st = await chrome.storage.local.get(['lastVideoMetadata']);
+            vidId = st?.lastVideoMetadata?.videoId || null;
+          }
+        } catch (_) {}
+      }
+      if (vidId) {
+        try {
+          debugLog('[Editor] Recovering video blob from IndexedDB for ID:', vidId);
+          const recovered = await retrieveVideoFromIndexedDB(vidId);
+          if (recovered && recovered.size > 0) {
+            blob = recovered;
+            currentVideoBlob = recovered;
+            debugLog('[Editor] ✅ Successfully recovered video blob from IndexedDB:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
+          }
+        } catch (idbErr) {
+          console.warn('[Editor] IndexedDB recovery error:', idbErr);
+        }
+      }
+    }
+
+    if (!blob || blob.size === 0) {
+      throw new Error('Video source is unavailable or empty. Please reload the recording.');
+    }
+
     debugLog('[Editor] Video blob size:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
     
     // Even width/height — fewer encoder artifacts (H.264 / VP9) at 1440p and 4K
@@ -7920,6 +7991,7 @@ async function doExport() {
       borderRadius: settings.background === 'hidden' ? 0 : (settings.borderRadius ?? 14),
       trimStart: trimStart,
       trimEnd: trimEnd,
+      clickEnabled: settings.clickEnabled !== false,
       clickStyle: (settings.clickEnabled === false) ? 'none' : (settings.clickStyle || 'ripple'),
       clickWaves: settings.clickWaves || 'double',
       clickColor: settings.customClickColor || clickColors[settings.clickColor] || '#ffffff',
@@ -7933,6 +8005,8 @@ async function doExport() {
       webcamSize: settings.webcamSize || 'medium',
       webcamScale: settings.webcamScale ?? 1.0,
       webcamShape: settings.webcamShape || 'circular',
+      webcamBorderStyle: settings.webcamBorderStyle || 'glow',
+      webcamShadow: settings.webcamShadow !== false,
       webcamFlip: settings.webcamFlip !== false,
       webcamZoomMode: (settings.webcamZoomMode === 'floating') ? 'float' : (settings.webcamZoomMode || 'float'),
       blurRegions: Array.isArray(blurRegions) ? JSON.parse(JSON.stringify(blurRegions)) : [],
@@ -8004,6 +8078,11 @@ async function doExport() {
     );
     
     debugLog('[Editor] ✅ Processing complete');
+
+    if (!processed || !processed.size || processed.size === 0) {
+      throw new Error('Exported video file is empty or corrupted (0 bytes).');
+    }
+
     debugLog('[Editor] Output size:', (processed.size / 1024 / 1024).toFixed(2), 'MB');
     
     let mimeType = (processed && processed.type) ? processed.type : '';

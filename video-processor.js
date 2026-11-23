@@ -118,6 +118,10 @@ class VideoProcessor {
   async processVideo(videoBlob, zoomSegments, onProgress = null, settings = null, cursorData = []) {
     debugLog('[VideoProcessor] Starting processing...');
     
+    // Invalidate stale cached deduplicated clicks for this processing run
+    this._dedupedClicks = null;
+    this._dedupedRef = null;
+    
     if (settings) {
       this.settings = { ...this.settings, ...settings };
       if (this.settings.cleanBrowser !== undefined) {
@@ -687,6 +691,10 @@ class VideoProcessor {
         
         let blob = new Blob(this.chunks, { type: this.mediaRecorder.mimeType || 'video/webm' });
 
+        if (!blob || blob.size === 0) {
+          throw new Error('Exported video is empty (0 bytes generated). MediaRecorder may have failed to encode frames.');
+        }
+
         // If export is WebM, patch EBML duration header with exact export duration
         if (blob.type.includes('webm') && duration > 0) {
           try {
@@ -742,13 +750,28 @@ class VideoProcessor {
         this.cleanupWebcam();
         this.cleanupAudio();
         
-        // Clean up on error
+        // Clean up on error — release video blob URL and canvas to prevent memory leaks
         if (this.video) {
+          if (this.video.src && this.video.src.startsWith('blob:')) {
+            try { URL.revokeObjectURL(this.video.src); } catch (_) {}
+          }
           this.video.pause();
           this.video.src = '';
           this.video.srcObject = null;
+          this.video = null;
+        }
+        if (this.canvas) {
+          const ctx = this.canvas.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          }
+          this.canvas = null;
+          this.ctx = null;
         }
         if (this.mediaRecorder) {
+          try {
+            if (this.mediaRecorder.state !== 'inactive') this.mediaRecorder.stop();
+          } catch (_) {}
           this.mediaRecorder = null;
         }
         if (this.outputStream) {

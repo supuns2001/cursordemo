@@ -30,6 +30,9 @@ if (window.__SCREEN_RECORDER_CONTENT_INJECTED__) {
   let lastClickTs = 0;
   let lastClickX = null;
   let lastClickY = null;
+  let lastDblClickTs = 0;
+  let lastDblClickX = null;
+  let lastDblClickY = null;
   let lastSentMetrics = null;
   let windowGeometryPollInterval = null;
   const SEND_INTERVAL = 16; // 60Hz smooth cursor capture rate (clicks always sent immediately)
@@ -828,6 +831,11 @@ if (window.__SCREEN_RECORDER_CONTENT_INJECTED__) {
 
   function handleContextMenu(event) {
     if (!isTracking || isCameraOverlayTarget(event)) return;
+    const now = Date.now();
+    if (now - lastClickTs < 20 && event.clientX === lastClickX && event.clientY === lastClickY) return;
+    lastClickTs = now;
+    lastClickX = event.clientX;
+    lastClickY = event.clientY;
     updateLastMouse(event);
     clickCount++;
     console.log('[Content] 🖱️ Right Click #' + clickCount + ' at:', event.clientX, event.clientY);
@@ -836,6 +844,11 @@ if (window.__SCREEN_RECORDER_CONTENT_INJECTED__) {
 
   function handleAuxClick(event) {
     if (!isTracking || event.button !== 1 || isCameraOverlayTarget(event)) return;
+    const now = Date.now();
+    if (now - lastClickTs < 20 && event.clientX === lastClickX && event.clientY === lastClickY) return;
+    lastClickTs = now;
+    lastClickX = event.clientX;
+    lastClickY = event.clientY;
     updateLastMouse(event);
     clickCount++;
     console.log('[Content] 🖱️ Middle Click #' + clickCount + ' at:', event.clientX, event.clientY);
@@ -844,6 +857,11 @@ if (window.__SCREEN_RECORDER_CONTENT_INJECTED__) {
 
   function handleDoubleClick(event) {
     if (!isTracking || isCameraOverlayTarget(event)) return;
+    const now = Date.now();
+    if (now - lastDblClickTs < 40 && event.clientX === lastDblClickX && event.clientY === lastDblClickY) return;
+    lastDblClickTs = now;
+    lastDblClickX = event.clientX;
+    lastDblClickY = event.clientY;
     updateLastMouse(event);
     console.log('[Content] 🖱️🖱️ Double click at:', event.clientX, event.clientY);
     sendCursorData(event, 'doubleclick', { button: event.button || 0, buttonType: 'double' });

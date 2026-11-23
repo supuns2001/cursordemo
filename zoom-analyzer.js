@@ -293,8 +293,8 @@ class ZoomAnalyzer {
           normX = point.x;
           normY = point.y;
         } else {
-          normX = point.x / videoWidth;
-          normY = point.y / videoHeight;
+          normX = videoWidth > 0 ? point.x / videoWidth : 0.5;
+          normY = videoHeight > 0 ? point.y / videoHeight : 0.5;
         }
       } else {
         normX = 0.5;
@@ -644,7 +644,7 @@ class ZoomAnalyzer {
       let coords = ZoomAnalyzer.getPointSourceCoords(click, videoWidth, videoHeight, this.displaySurface);
       if (click._isScrollBurst) {
         const live = this.getCursorAtTime(clickTime, videoWidth, videoHeight, this.displaySurface);
-        if (live) coords = { x: live.x, y: live.y, normX: live.x / videoWidth, normY: live.y / videoHeight };
+        if (live) coords = { x: live.x, y: live.y, normX: videoWidth > 0 ? live.x / videoWidth : 0.5, normY: videoHeight > 0 ? live.y / videoHeight : 0.5 };
       }
       
       const clampedY = Math.max(crop, Math.min(videoHeight, coords.y));
@@ -1266,8 +1266,8 @@ class ZoomAnalyzer {
         return {
           x,
           y,
-          normX: x / videoWidth,
-          normY: y / videoHeight
+          normX: videoWidth > 0 ? x / videoWidth : 0.5,
+          normY: videoHeight > 0 ? y / videoHeight : 0.5
         };
       } else if (dt > 250 && dt <= 2200 && timestamp >= c1.timestamp && timestamp <= c2.timestamp) {
         // When the user pauses between points (or only click events were recorded),
@@ -1283,8 +1283,8 @@ class ZoomAnalyzer {
           return {
             x,
             y,
-            normX: x / videoWidth,
-            normY: y / videoHeight
+            normX: videoWidth > 0 ? x / videoWidth : 0.5,
+            normY: videoHeight > 0 ? y / videoHeight : 0.5
           };
         }
       }
@@ -1304,46 +1304,14 @@ class ZoomAnalyzer {
    * cursor telemetry exists (e.g., imported video file or native desktop app recording).
    */
   resolveCursorHighlightPos(timestamp, videoWidth = 1920, videoHeight = 1080, displaySurface = null, zoomSegments = null) {
+    if (!this.cursorData || this.cursorData.length === 0) {
+      return null;
+    }
     const pos = this.getCursorAtTime(timestamp, videoWidth, videoHeight, displaySurface);
     if (pos && Number.isFinite(pos.x) && Number.isFinite(pos.y)) {
       return pos;
     }
-    if (Array.isArray(zoomSegments) && zoomSegments.length > 0) {
-      let bestSeg = zoomSegments.find(s => s && timestamp >= s.startTime && timestamp <= s.endTime);
-      if (!bestSeg) {
-        let minDiff = Infinity;
-        for (const s of zoomSegments) {
-          if (!s) continue;
-          const d = Math.min(Math.abs(timestamp - (s.startTime || 0)), Math.abs(timestamp - (s.endTime || 0)));
-          if (d < minDiff) {
-            minDiff = d;
-            bestSeg = s;
-          }
-        }
-      }
-      if (bestSeg) {
-        const cx = Number.isFinite(bestSeg.centerX)
-          ? bestSeg.centerX
-          : (Number.isFinite(bestSeg.normalizedX) ? bestSeg.normalizedX * videoWidth : videoWidth * 0.5);
-        const cy = Number.isFinite(bestSeg.centerY)
-          ? bestSeg.centerY
-          : (Number.isFinite(bestSeg.normalizedY) ? bestSeg.normalizedY * videoHeight : videoHeight * 0.5);
-        return {
-          x: Math.max(0, Math.min(videoWidth, cx)),
-          y: Math.max(0, Math.min(videoHeight, cy)),
-          normX: Math.max(0, Math.min(1, cx / Math.max(1, videoWidth))),
-          normY: Math.max(0, Math.min(1, cy / Math.max(1, videoHeight))),
-          isFallback: true
-        };
-      }
-    }
-    return {
-      x: videoWidth * 0.5,
-      y: videoHeight * 0.5,
-      normX: 0.5,
-      normY: 0.5,
-      isFallback: true
-    };
+    return null;
   }
 
   /**

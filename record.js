@@ -1072,7 +1072,10 @@ async function enableCameraVideo() {
         audio: false
       });
     } catch (idealErr) {
-      console.warn('[Record] Ideal camera constraints unavailable, attempting generic fallback:', idealErr?.name || idealErr);
+      if (idealErr && (idealErr.name === 'NotFoundError' || idealErr.name === 'DevicesNotFoundError' || idealErr.name === 'NotAllowedError' || idealErr.name === 'PermissionDeniedError')) {
+        throw idealErr;
+      }
+      debugLog('[Record] Ideal camera constraints unavailable, attempting generic fallback:', idealErr?.name || idealErr);
       stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false
@@ -1117,7 +1120,11 @@ async function enableCameraVideo() {
 
     updateOptionalMediaStatus();
   } catch (error) {
-    console.warn('[Record] Camera initialization error:', error?.name, error?.message);
+    if (error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError' || error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError') {
+      console.info('[Record] Camera access not available:', error?.name, error?.message);
+    } else {
+      console.warn('[Record] Camera initialization error:', error?.name, error?.message);
+    }
     enableCameraBtn.disabled = false;
     enableCameraBtn.innerHTML = `<span class="btn-icon">${UI_ICONS.camera}</span> Enable Camera`;
     if (liveCameraPreview) {
@@ -1181,10 +1188,10 @@ async function enableMicrophone() {
         video: false
       });
     } catch (idealMicErr) {
-      if (idealMicErr && (idealMicErr.name === 'NotAllowedError' || idealMicErr.name === 'PermissionDeniedError')) {
+      if (idealMicErr && (idealMicErr.name === 'NotAllowedError' || idealMicErr.name === 'PermissionDeniedError' || idealMicErr.name === 'NotFoundError' || idealMicErr.name === 'DevicesNotFoundError')) {
         throw idealMicErr;
       }
-      console.warn('[Record] Ideal microphone constraints unavailable, retrying with generic audio fallback:', idealMicErr?.name || idealMicErr);
+      debugLog('[Record] Ideal microphone constraints unavailable, retrying with generic audio fallback:', idealMicErr?.name || idealMicErr);
       micStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: false
@@ -1224,7 +1231,11 @@ async function enableMicrophone() {
 
     updateOptionalMediaStatus();
   } catch (error) {
-    console.warn('[Record] Microphone error:', error?.name, error?.message);
+    if (error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError' || error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError') {
+      console.info('[Record] Microphone not available:', error?.name, error?.message);
+    } else {
+      console.warn('[Record] Microphone error:', error?.name, error?.message);
+    }
     stopMicVisualizer();
     document.getElementById('micTile')?.classList.remove('is-configured');
     enableMicBtn.disabled = false;
