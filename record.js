@@ -2325,14 +2325,14 @@ async function startLocalRecording() {
     // Monitor for errors during recording
     setTimeout(() => {
       if (mediaRecorder && mediaRecorder.state === 'recording') {
-        console.log('[Record] MediaRecorder still recording after 1 second');
+        console.log('[Record] MediaRecorder still recording after 2.5 seconds');
         if (recordedChunks.length === 0) {
-          console.warn('[Record] ⚠️ No data chunks received yet - this may be normal for very short recordings');
+          console.log('[Record] Initial data chunks pending; will finalize upon dataavailable/stop');
         }
       } else {
         console.error('[Record] ⚠️ MediaRecorder stopped unexpectedly! State:', mediaRecorder?.state);
       }
-    }, 1000);
+    }, 2500);
     
   } catch (error) {
     console.error('[Record] Failed to start MediaRecorder:', error);

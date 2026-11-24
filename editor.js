@@ -1928,7 +1928,14 @@ function setupEventListeners() {
   document.getElementById('loadVideoBtn').addEventListener('click', loadVideoFromFile);
   
   // Topbar shortcuts & actions
-  document.getElementById('loadVideoTopBtn')?.addEventListener('click', loadVideoFromFile);
+  document.getElementById('loadVideoTopBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (typeof toggleMediaDrawer === 'function') {
+      toggleMediaDrawer();
+    } else {
+      loadVideoFromFile();
+    }
+  });
   document.getElementById('newRecordingTopBtn')?.addEventListener('click', startNewRecording);
   document.getElementById('exportTopBtn')?.addEventListener('click', exportVideo);
   document.getElementById('topbarUndoBtn')?.addEventListener('click', (e) => {
@@ -1941,6 +1948,9 @@ function setupEventListeners() {
   });
   document.getElementById('topbarEditModeBtn')?.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (typeof closeMediaDrawer === 'function') {
+      closeMediaDrawer();
+    }
     showToast('In Studio Video Editor');
   });
   
@@ -2635,26 +2645,91 @@ function setupEventListeners() {
     requestPreviewRedraw();
   });
 
-  // Studio Inspector Category Tabs (All / Frame / Zoom / Effects)
+  // Studio Inspector Category Dock & Drawer Management (OpenScreen NLE Style)
+  const categoryMetadata = {
+    frame: { title: 'Frame & Canvas', icon: 'icon-frame' },
+    zoom: { title: 'Camera & Auto-Zoom', icon: 'icon-zoom' },
+    cursor: { title: 'Cursor & Interaction', icon: 'icon-pointer' },
+    webcam: { title: 'Webcam Overlay', icon: 'icon-camera' },
+    blur: { title: 'Blur & Privacy', icon: 'icon-mask' },
+    all: { title: 'All Studio Controls', icon: 'icon-sliders' }
+  };
+
+  const inspectorDrawer = document.getElementById('inspectorDrawer');
+  const drawerTitle = document.getElementById('inspectorDrawerTitle');
+  const drawerIcon = document.getElementById('inspectorDrawerIcon');
+  const closeDrawerBtn = document.getElementById('closeInspectorDrawerBtn');
+
+  function openCategory(targetGroup) {
+    if (inspectorDrawer) {
+      inspectorDrawer.classList.remove('collapsed');
+      const savedW = parseInt(localStorage.getItem('cursordemo_inspector_width'), 10) || 340;
+      inspectorDrawer.style.width = savedW + 'px';
+    }
+    
+    // Update dock tab buttons
+    document.querySelectorAll('.inspector-tab-btn[data-inspector-tab]').forEach(b => {
+      const active = b.dataset.inspectorTab === targetGroup;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    // Update drawer header title and icon
+    const meta = categoryMetadata[targetGroup] || categoryMetadata.all;
+    if (drawerTitle) drawerTitle.textContent = meta.title;
+    if (drawerIcon) drawerIcon.innerHTML = `<use href="#${meta.icon}"></use>`;
+
+    // Show/hide matching panel sections
+    document.querySelectorAll('.sidebar-content-scrollable .panel-section[data-panel-group]').forEach(sec => {
+      const group = sec.dataset.panelGroup;
+      const show = targetGroup === 'all' || group === targetGroup;
+      sec.dataset.hiddenByTab = show ? 'false' : 'true';
+      sec.style.display = show ? '' : 'none';
+    });
+    document.querySelectorAll('.sidebar-content-scrollable .section-divider').forEach(div => {
+      div.style.display = targetGroup === 'all' ? '' : 'none';
+    });
+
+    // Reset scroll to top for seamless category feel
+    const scrollable = document.querySelector('.sidebar-content-scrollable');
+    if (scrollable) scrollable.scrollTop = 0;
+
+    // Trigger video frame resize after drawer transition
+    if (typeof updateFrameSize === 'function') {
+      setTimeout(updateFrameSize, 60);
+    }
+  }
+
+  function closeCategoryDrawer() {
+    if (!inspectorDrawer) return;
+    inspectorDrawer.classList.add('collapsed');
+    inspectorDrawer.style.width = '';
+    document.querySelectorAll('.inspector-tab-btn[data-inspector-tab]').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    if (typeof updateFrameSize === 'function') {
+      setTimeout(updateFrameSize, 60);
+    }
+  }
+
   document.querySelectorAll('.inspector-tab-btn[data-inspector-tab]').forEach(tabBtn => {
     tabBtn.addEventListener('click', function() {
-      const targetGroup = this.dataset.inspectorTab || 'all';
-      document.querySelectorAll('.inspector-tab-btn[data-inspector-tab]').forEach(b => {
-        const active = b === this;
-        b.classList.toggle('active', active);
-        b.setAttribute('aria-selected', active ? 'true' : 'false');
-      });
-      document.querySelectorAll('.sidebar-content-scrollable .panel-section[data-panel-group]').forEach(sec => {
-        const group = sec.dataset.panelGroup;
-        const show = targetGroup === 'all' || group === targetGroup;
-        sec.dataset.hiddenByTab = show ? 'false' : 'true';
-        sec.style.display = show ? '' : 'none';
-      });
-      document.querySelectorAll('.sidebar-content-scrollable .section-divider').forEach(div => {
-        div.style.display = targetGroup === 'all' ? '' : 'none';
-      });
+      const targetGroup = this.dataset.inspectorTab || 'frame';
+      if (this.classList.contains('active') && inspectorDrawer && !inspectorDrawer.classList.contains('collapsed')) {
+        closeCategoryDrawer();
+      } else {
+        openCategory(targetGroup);
+      }
     });
   });
+
+  if (closeDrawerBtn) {
+    closeDrawerBtn.addEventListener('click', closeCategoryDrawer);
+  }
+
+  // Set default initial view to 'frame' (Frame & Canvas)
+  openCategory('frame');
 
   // Update topbar aspect ratio pill when aspectSelect changes
   document.getElementById('aspectSelect')?.addEventListener('change', function() {
@@ -2663,6 +2738,482 @@ function setupEventListeners() {
       pill.textContent = this.value === 'native' ? 'Native' : this.value;
     }
   });
+
+  // ========== LEFT MEDIA DRAWER & MULTI-CLIP BIN (PHASE 4) ==========
+  const mediaDrawer = document.getElementById('mediaDrawer');
+  const closeMediaDrawerBtn = document.getElementById('closeMediaDrawerBtn');
+  const mediaAddClipDropzone = document.getElementById('mediaAddClipDropzone');
+  const mediaAddClipFileInput = document.getElementById('mediaAddClipFileInput');
+  const mediaImportFileBtn = document.getElementById('mediaImportFileBtn');
+  const mediaNewRecordingBtn = document.getElementById('mediaNewRecordingBtn');
+  const refreshRecordingsBtn = document.getElementById('refreshRecordingsBtn');
+  const mediaClipSequenceList = document.getElementById('mediaClipSequenceList');
+  const recentRecordingsList = document.getElementById('recentRecordingsList');
+
+  let mediaClipSequence = [];
+
+  function openMediaDrawer() {
+    if (!mediaDrawer) return;
+    mediaDrawer.classList.remove('collapsed');
+    mediaDrawer.classList.add('open');
+    document.getElementById('loadVideoTopBtn')?.classList.add('active');
+    document.getElementById('topbarEditModeBtn')?.classList.remove('active');
+    updateMediaDrawerUI();
+    loadRecentRecordingsList();
+    if (typeof updateFrameSize === 'function') {
+      setTimeout(updateFrameSize, 60);
+    }
+  }
+
+  function closeMediaDrawer() {
+    if (!mediaDrawer) return;
+    mediaDrawer.classList.add('collapsed');
+    mediaDrawer.classList.remove('open');
+    document.getElementById('loadVideoTopBtn')?.classList.remove('active');
+    document.getElementById('topbarEditModeBtn')?.classList.add('active');
+    if (typeof updateFrameSize === 'function') {
+      setTimeout(updateFrameSize, 60);
+    }
+  }
+
+  function toggleMediaDrawer() {
+    if (mediaDrawer && mediaDrawer.classList.contains('open') && !mediaDrawer.classList.contains('collapsed')) {
+      closeMediaDrawer();
+    } else {
+      openMediaDrawer();
+    }
+  }
+
+  function updateMediaDrawerUI() {
+    const nameEl = document.getElementById('mediaCurrentClipName');
+    const durEl = document.getElementById('mediaCurrentClipDuration');
+    const resEl = document.getElementById('mediaCurrentClipRes');
+    const countBadge = document.getElementById('mediaClipCountBadge');
+
+    const dur = getVideoDuration();
+    if (nameEl) nameEl.textContent = currentVideoTitle || 'Studio Recording';
+    if (durEl) durEl.textContent = isFinite(dur) && dur > 0 ? formatTime(dur) : '00:00';
+    if (resEl && video) resEl.textContent = `${video.videoWidth || 1920}×${video.videoHeight || 1080}`;
+
+    // Render sequence list
+    if (mediaClipSequenceList) {
+      mediaClipSequenceList.innerHTML = '';
+
+      // Primary master clip (Track 1)
+      const primaryItem = document.createElement('div');
+      primaryItem.className = 'media-recording-item';
+      primaryItem.style.background = 'rgba(16, 185, 129, 0.08)';
+      primaryItem.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+      primaryItem.innerHTML = `
+        <div class="media-recording-info">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="media-clip-badge badge-primary">Clip 1</span>
+            <span class="media-recording-name">${currentVideoTitle || 'Studio Recording'}</span>
+          </div>
+          <div class="media-recording-details">Master Track • ${isFinite(dur) && dur > 0 ? formatTime(dur) : '00:00'} • ${video?.videoWidth || 1920}×${video?.videoHeight || 1080}</div>
+        </div>
+        <span class="project-status-dot" style="margin-right: 4px;" title="Active Project Master Track"></span>
+      `;
+      mediaClipSequenceList.appendChild(primaryItem);
+
+      // Additional secondary clips
+      mediaClipSequence.forEach((clip, index) => {
+        const item = document.createElement('div');
+        item.className = 'media-recording-item';
+        item.innerHTML = `
+          <div class="media-recording-info">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="media-clip-badge badge-secondary">Clip ${index + 2}</span>
+              <span class="media-recording-name">${clip.name || 'Additional Clip'}</span>
+            </div>
+            <div class="media-recording-details">Merged Sequence • ${(clip.size / (1024 * 1024)).toFixed(1)} MB</div>
+          </div>
+          <div class="media-recording-actions">
+            <button type="button" class="media-mini-btn remove-clip-btn" data-index="${index}" title="Remove from sequence" style="color: #f87171;">
+              ✕
+            </button>
+          </div>
+        `;
+        const removeBtn = item.querySelector('.remove-clip-btn');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mediaClipSequence.splice(index, 1);
+            updateMediaDrawerUI();
+            showToast('Clip removed from sequence');
+          });
+        }
+        mediaClipSequenceList.appendChild(item);
+      });
+
+      const totalClips = 1 + mediaClipSequence.length;
+      if (countBadge) countBadge.textContent = totalClips === 1 ? '1 master clip' : `${totalClips} merged clips`;
+    }
+  }
+
+  async function loadRecentRecordingsList() {
+    if (!recentRecordingsList) return;
+    recentRecordingsList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); padding: 8px 4px; text-align: center;">Scanning IndexedDB storage...</div>';
+
+    try {
+      const items = await getRecentRecordingsFromIndexedDB();
+      if (!items || items.length === 0) {
+        recentRecordingsList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); padding: 12px 6px; text-align: center; border: 1px dashed rgba(255,255,255,0.06); border-radius: 8px;">No recent recordings found in browser storage</div>';
+        return;
+      }
+
+      recentRecordingsList.innerHTML = '';
+      items.slice(0, 8).forEach(item => {
+        const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recording';
+        const sizeMb = item.blob && item.blob.size ? (item.blob.size / (1024 * 1024)).toFixed(1) + ' MB' : '0 MB';
+        const isCurrent = (item.id === currentVideoId);
+
+        const row = document.createElement('div');
+        row.className = 'media-recording-item';
+        if (isCurrent) {
+          row.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          row.style.background = 'rgba(16, 185, 129, 0.05)';
+        }
+
+        row.innerHTML = `
+          <div class="media-recording-info">
+            <div class="media-recording-name" title="${item.id}">${dateStr}</div>
+            <div class="media-recording-details">${item.id} • ${sizeMb}</div>
+          </div>
+          <div class="media-recording-actions">
+            ${isCurrent ? '<span style="font-size: 10px; font-weight: 700; color: #34d399; margin-right: 4px;">ACTIVE</span>' : `
+              <button type="button" class="media-mini-btn load-btn" data-id="${item.id}" title="Load recording into editor">
+                Load
+              </button>
+            `}
+            <button type="button" class="media-mini-btn download-btn" data-id="${item.id}" title="Download raw recording">
+              <svg class="studio-icon" style="width: 10px; height: 10px;"><use href="#icon-export"></use></svg>
+            </button>
+          </div>
+        `;
+
+        const loadBtn = row.querySelector('.load-btn');
+        if (loadBtn) {
+          loadBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (confirm('Load this recording into CursorDemo Studio? Any unsaved edits will be replaced.')) {
+              await loadRecordedVideoBlob(item);
+            }
+          });
+        }
+
+        const dlBtn = row.querySelector('.download-btn');
+        if (dlBtn) {
+          dlBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadRawVideo(item);
+          });
+        }
+
+        recentRecordingsList.appendChild(row);
+      });
+    } catch (err) {
+      recentRecordingsList.innerHTML = `<div style="font-size: 11px; color: #f87171; padding: 8px 4px; text-align: center;">Could not read storage: ${err.message || 'Error'}</div>`;
+    }
+  }
+
+  async function getRecentRecordingsFromIndexedDB() {
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open('CursorDemoVideoStorage', 1);
+        request.onerror = () => resolve([]);
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('videos')) {
+            db.close();
+            return resolve([]);
+          }
+          const tx = db.transaction(['videos'], 'readonly');
+          const store = tx.objectStore('videos');
+          const getAllReq = store.getAll();
+          getAllReq.onsuccess = () => {
+            db.close();
+            const items = getAllReq.result || [];
+            // Filter to only primary video clips (exclude '_cam' and '_meta')
+            const videoItems = items.filter(it => it.id && it.id.startsWith('video_') && !it.id.endsWith('_cam') && !it.id.endsWith('_meta'));
+            // Sort newest first
+            videoItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            resolve(videoItems);
+          };
+          getAllReq.onerror = () => {
+            db.close();
+            resolve([]);
+          };
+        };
+        request.onupgradeneeded = () => resolve([]);
+      } catch (_) {
+        resolve([]);
+      }
+    });
+  }
+
+  async function loadRecordedVideoBlob(item) {
+    if (!item || !item.blob) return;
+    const file = new File([item.blob], `${item.id}.webm`, { type: item.blob.type || 'video/webm' });
+    await loadVideoFileDirectly(file);
+    currentVideoId = item.id;
+    currentVideoTitle = `Recording ${new Date(item.timestamp || Date.now()).toLocaleDateString()}`;
+    updateTopbarProjectInfo(currentVideoTitle, 0);
+    updateMediaDrawerUI();
+    loadRecentRecordingsList();
+    showToast('Loaded recording into Studio');
+  }
+
+  function downloadRawVideo(item) {
+    if (!item || !item.blob) return;
+    const url = URL.createObjectURL(item.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${item.id}.webm`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  function handleAddClipFile(file) {
+    if (!file || !file.type.startsWith('video/')) {
+      alert('Please select a valid video file (MP4, WebM, MOV).');
+      return;
+    }
+    // If no video is currently loaded, load it as primary!
+    if (!videoLoaded || !currentVideoBlob) {
+      loadVideoFileDirectly(file);
+      return;
+    }
+    // Add to secondary sequence
+    mediaClipSequence.push({
+      id: 'clip_' + Date.now(),
+      name: file.name,
+      size: file.size,
+      file: file
+    });
+    updateMediaDrawerUI();
+    showToast(`Added "${file.name}" to sequence (${mediaClipSequence.length + 1} clips total)`);
+  }
+
+  if (closeMediaDrawerBtn) {
+    closeMediaDrawerBtn.addEventListener('click', closeMediaDrawer);
+  }
+
+  if (refreshRecordingsBtn) {
+    refreshRecordingsBtn.addEventListener('click', () => {
+      loadRecentRecordingsList();
+      showToast('Refreshed recordings library');
+    });
+  }
+
+  if (mediaImportFileBtn) {
+    mediaImportFileBtn.addEventListener('click', loadVideoFromFile);
+  }
+
+  if (mediaNewRecordingBtn) {
+    mediaNewRecordingBtn.addEventListener('click', startNewRecording);
+  }
+
+  if (mediaAddClipDropzone) {
+    mediaAddClipDropzone.addEventListener('click', () => {
+      mediaAddClipFileInput?.click();
+    });
+    mediaAddClipDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      mediaAddClipDropzone.style.borderColor = 'rgba(52, 211, 153, 0.8)';
+      mediaAddClipDropzone.style.background = 'rgba(16, 185, 129, 0.1)';
+    });
+    mediaAddClipDropzone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      mediaAddClipDropzone.style.borderColor = '';
+      mediaAddClipDropzone.style.background = '';
+    });
+    mediaAddClipDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      mediaAddClipDropzone.style.borderColor = '';
+      mediaAddClipDropzone.style.background = '';
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleAddClipFile(file);
+    });
+  }
+
+  if (mediaAddClipFileInput) {
+    mediaAddClipFileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleAddClipFile(file);
+      mediaAddClipFileInput.value = '';
+    });
+  }
+
+  // ========== RESIZABLE PANELS & SAFE BOUNDS (STUDIO NLE SPLITTERS) ==========
+  function initPanelResizers() {
+    const inspectorResizer = document.getElementById('inspectorResizer');
+    const inspectorDrawer = document.getElementById('inspectorDrawer');
+    const timelineResizer = document.getElementById('timelineResizer');
+    const timelineContainer = document.getElementById('timelineContainer');
+
+    // Safe bounds constraints
+    const DEFAULT_INSPECTOR_WIDTH = 340;
+    const MIN_INSPECTOR_WIDTH = 280;
+    let savedInspectorWidth = parseInt(localStorage.getItem('cursordemo_inspector_width'), 10);
+    if (!Number.isFinite(savedInspectorWidth) || savedInspectorWidth < MIN_INSPECTOR_WIDTH) {
+      savedInspectorWidth = DEFAULT_INSPECTOR_WIDTH;
+    }
+    if (inspectorDrawer && !inspectorDrawer.classList.contains('collapsed')) {
+      inspectorDrawer.style.width = savedInspectorWidth + 'px';
+    }
+
+    const DEFAULT_TIMELINE_HEIGHT = 152;
+    const MIN_TIMELINE_HEIGHT = 115;
+    let savedTimelineHeight = parseInt(localStorage.getItem('cursordemo_timeline_height'), 10);
+    if (!Number.isFinite(savedTimelineHeight) || savedTimelineHeight < MIN_TIMELINE_HEIGHT) {
+      savedTimelineHeight = DEFAULT_TIMELINE_HEIGHT;
+    }
+    if (timelineContainer) {
+      timelineContainer.style.height = savedTimelineHeight + 'px';
+    }
+
+    // 1. Inspector Horizontal Width Resizer (Left drag handle on Inspector Drawer)
+    if (inspectorResizer && inspectorDrawer) {
+      let isDraggingInspector = false;
+      let startX = 0;
+      let startWidth = 0;
+      let rafId = null;
+
+      inspectorResizer.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        isDraggingInspector = true;
+        startX = e.clientX;
+        startWidth = inspectorDrawer.getBoundingClientRect().width;
+        inspectorResizer.classList.add('resizing');
+        inspectorDrawer.classList.add('is-resizing');
+        document.body.classList.add('is-resizing-col');
+        try {
+          inspectorResizer.setPointerCapture(e.pointerId);
+        } catch (_) {}
+        e.preventDefault();
+      });
+
+      inspectorResizer.addEventListener('pointermove', (e) => {
+        if (!isDraggingInspector) return;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          // Dragging left (negative delta) expands the drawer width
+          const deltaX = startX - e.clientX;
+          const maxAllowedWidth = Math.min(540, Math.floor(window.innerWidth * 0.45));
+          const newWidth = Math.max(MIN_INSPECTOR_WIDTH, Math.min(maxAllowedWidth, Math.round(startWidth + deltaX)));
+          
+          inspectorDrawer.style.width = newWidth + 'px';
+          savedInspectorWidth = newWidth;
+          updateFrameSize();
+        });
+      });
+
+      const stopInspectorDrag = (e) => {
+        if (!isDraggingInspector) return;
+        isDraggingInspector = false;
+        inspectorResizer.classList.remove('resizing');
+        inspectorDrawer.classList.remove('is-resizing');
+        document.body.classList.remove('is-resizing-col');
+        try {
+          inspectorResizer.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+        localStorage.setItem('cursordemo_inspector_width', savedInspectorWidth.toString());
+        updateFrameSize();
+      };
+
+      inspectorResizer.addEventListener('pointerup', stopInspectorDrag);
+      inspectorResizer.addEventListener('pointercancel', stopInspectorDrag);
+
+      // Double-click resets inspector to standard 340px
+      inspectorResizer.addEventListener('dblclick', () => {
+        inspectorDrawer.style.width = DEFAULT_INSPECTOR_WIDTH + 'px';
+        savedInspectorWidth = DEFAULT_INSPECTOR_WIDTH;
+        localStorage.setItem('cursordemo_inspector_width', DEFAULT_INSPECTOR_WIDTH.toString());
+        updateFrameSize();
+        showToast('Inspector width reset to 340px');
+      });
+    }
+
+    // 2. Timeline Vertical Height Resizer (Top drag handle on Timeline Deck)
+    if (timelineResizer && timelineContainer) {
+      let isDraggingTimeline = false;
+      let startY = 0;
+      let startHeight = 0;
+      let rafId = null;
+
+      timelineResizer.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        isDraggingTimeline = true;
+        startY = e.clientY;
+        startHeight = timelineContainer.getBoundingClientRect().height;
+        timelineResizer.classList.add('resizing');
+        timelineContainer.classList.add('is-resizing');
+        document.body.classList.add('is-resizing-row');
+        try {
+          timelineResizer.setPointerCapture(e.pointerId);
+        } catch (_) {}
+        e.preventDefault();
+      });
+
+      timelineResizer.addEventListener('pointermove', (e) => {
+        if (!isDraggingTimeline) return;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          // Dragging up (negative delta) expands timeline height
+          const deltaY = startY - e.clientY;
+          const maxAllowedHeight = Math.min(320, Math.floor(window.innerHeight * 0.45));
+          const newHeight = Math.max(MIN_TIMELINE_HEIGHT, Math.min(maxAllowedHeight, Math.round(startHeight + deltaY)));
+          
+          timelineContainer.style.height = newHeight + 'px';
+          savedTimelineHeight = newHeight;
+          updateFrameSize();
+          if (typeof drawTimelineAudioWaveform === 'function') {
+            drawTimelineAudioWaveform();
+          }
+        });
+      });
+
+      const stopTimelineDrag = (e) => {
+        if (!isDraggingTimeline) return;
+        isDraggingTimeline = false;
+        timelineResizer.classList.remove('resizing');
+        timelineContainer.classList.remove('is-resizing');
+        document.body.classList.remove('is-resizing-row');
+        try {
+          timelineResizer.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+        localStorage.setItem('cursordemo_timeline_height', savedTimelineHeight.toString());
+        updateFrameSize();
+        if (typeof drawTimelineAudioWaveform === 'function') {
+          drawTimelineAudioWaveform();
+        }
+      };
+
+      timelineResizer.addEventListener('pointerup', stopTimelineDrag);
+      timelineResizer.addEventListener('pointercancel', stopTimelineDrag);
+
+      // Double-click resets timeline to standard 152px
+      timelineResizer.addEventListener('dblclick', () => {
+        timelineContainer.style.height = DEFAULT_TIMELINE_HEIGHT + 'px';
+        savedTimelineHeight = DEFAULT_TIMELINE_HEIGHT;
+        localStorage.setItem('cursordemo_timeline_height', DEFAULT_TIMELINE_HEIGHT.toString());
+        updateFrameSize();
+        if (typeof drawTimelineAudioWaveform === 'function') {
+          drawTimelineAudioWaveform();
+        }
+        showToast('Timeline height reset to default');
+      });
+    }
+  }
+
+  // Initialize panel splitters
+  initPanelResizers();
 
   // Manual Blur controls
   document.getElementById('addBlurBtn')?.addEventListener('click', function(e) {
@@ -3026,6 +3577,11 @@ function setupEventListeners() {
       }
       if (isExportOpen && !isExportProcessing) {
         exportModalEl.classList.add('hidden');
+        return;
+      }
+      const mediaDrawerEl = document.getElementById('mediaDrawer');
+      if (mediaDrawerEl && mediaDrawerEl.classList.contains('open') && !mediaDrawerEl.classList.contains('collapsed')) {
+        if (typeof closeMediaDrawer === 'function') closeMediaDrawer();
         return;
       }
     }
@@ -3716,6 +4272,9 @@ function updateTopbarProjectInfo(title, durationSec) {
           : `${videoHeight}p`;
     resEl.textContent = `${resLabel} • 60FPS`;
   }
+  if (typeof updateMediaDrawerUI === 'function') {
+    updateMediaDrawerUI();
+  }
 }
 
 function saveState() {
@@ -4115,6 +4674,7 @@ async function loadVideo(url) {
       updateFrameSize();
       updateTimelineRuler();
       generateTimeMarkers();
+      drawTimelineAudioWaveform();
       analyzeZoom();
       renderBlurSegments();
       updateBlurUI();
@@ -4226,15 +4786,96 @@ function generateTimeMarkers() {
   if (!timeMarkers || !video || !dur || !isFinite(dur)) return;
   
   timeMarkers.innerHTML = '';
-  const markerCount = 4;
+  // OpenScreen-style dynamic high-density tick ruler across full width
+  let markerCount = 8;
+  if (dur <= 10) {
+    markerCount = Math.max(5, Math.floor(dur));
+  } else if (dur <= 30) {
+    markerCount = Math.max(6, Math.floor(dur / 2.5));
+  } else if (dur <= 60) {
+    markerCount = 8;
+  } else if (dur <= 180) {
+    markerCount = 10;
+  } else {
+    markerCount = 12;
+  }
   
   for (let i = 0; i <= markerCount; i++) {
     const marker = document.createElement('div');
     marker.className = 'time-marker';
     const time = (dur * i / markerCount);
-    marker.textContent = formatTime(time);
+    marker.textContent = formatTimeShort(time);
     timeMarkers.appendChild(marker);
   }
+}
+
+function drawTimelineAudioWaveform() {
+  const canvas = document.getElementById('audioWaveformCanvas');
+  const dur = getVideoDuration();
+  if (!canvas || !video || !dur || !isFinite(dur) || dur <= 0) return;
+  
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
+  if (w <= 0 || h <= 0) return;
+  
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  
+  // Create gradient matching OpenScreen audio track look
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
+  grad.addColorStop(0.5, 'rgba(5, 150, 105, 0.60)');
+  grad.addColorStop(1, 'rgba(4, 120, 87, 0.40)');
+  
+  // Generate deterministic, natural voice waveform with speech pauses
+  const step = 4;
+  const points = Math.ceil(w / step);
+  
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  
+  for (let i = 0; i <= points; i++) {
+    const x = i * step;
+    const norm = i / points;
+    const slowMod = Math.sin(norm * 24) * 0.5 + 0.5;
+    const fastMod = Math.sin(norm * 140) * 0.35 + Math.cos(norm * 280) * 0.25;
+    const speechCadence = Math.sin(norm * 12) > -0.25 ? 1.0 : 0.12;
+    const rawAmp = (slowMod * 0.6 + fastMod * 0.4) * speechCadence;
+    const amp = Math.max(0.08, Math.min(0.95, rawAmp));
+    const y = h - (amp * (h - 3));
+    ctx.lineTo(x, y);
+  }
+  
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+  
+  // Stroke top edge of waveform for crisp NLE outline
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(52, 211, 153, 0.85)';
+  ctx.beginPath();
+  for (let i = 0; i <= points; i++) {
+    const x = i * step;
+    const norm = i / points;
+    const slowMod = Math.sin(norm * 24) * 0.5 + 0.5;
+    const fastMod = Math.sin(norm * 140) * 0.35 + Math.cos(norm * 280) * 0.25;
+    const speechCadence = Math.sin(norm * 12) > -0.25 ? 1.0 : 0.12;
+    const rawAmp = (slowMod * 0.6 + fastMod * 0.4) * speechCadence;
+    const amp = Math.max(0.08, Math.min(0.95, rawAmp));
+    const y = h - (amp * (h - 3));
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.restore();
 }
 
 function formatTimeWithSeconds(s) {
@@ -4932,8 +5573,8 @@ function renderZoomSegments() {
     const rawLevel = (seg.zoomLevel || zoomDepths[settings.zoomDepth] || 1.75);
     const level = rawLevel.toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1');
     const modeIcon = seg.mode === 'fixed'
-      ? studioIcon('pin', 10, '', 'color:#d8b4fe;vertical-align:-1px;')
-      : studioIcon('target', 10, '', 'color:#a5b4fc;vertical-align:-1px;');
+      ? studioIcon('pin', 11, '', 'color:#ffffff;vertical-align:-1px;')
+      : studioIcon('zoom', 11, '', 'color:#ffffff;vertical-align:-1px;');
     pill.title = `Zoom ${level}× [${seg.mode || 'follow'}] (${formatTimeShort(startSec)} - ${formatTimeShort(endSec)}) • Double-click or right-click to edit zoom amount`;
     
     // Left drag handle (adjusts start time)
@@ -5725,9 +6366,9 @@ function togglePlay() {
 
 function updatePlayButton() {
   if (isPlaying) {
-    playBtn.innerHTML = '<svg class="studio-icon studio-icon-md fill-current"><use href="#icon-pause"></use></svg>';
+    playBtn.innerHTML = '<svg class="studio-icon studio-icon-md fill-current" viewBox="0 0 24 24"><use href="#icon-pause"></use></svg>';
   } else {
-    playBtn.innerHTML = '<svg class="studio-icon studio-icon-md fill-current"><use href="#icon-play"></use></svg>';
+    playBtn.innerHTML = '<svg class="studio-icon studio-icon-md fill-current" viewBox="0 0 24 24"><use href="#icon-play"></use></svg>';
   }
 }
 
@@ -8310,4 +8951,6 @@ window.addEventListener('beforeunload', function() {
 
 window.addEventListener('resize', function() {
   updateFrameSize();
+  generateTimeMarkers();
+  drawTimelineAudioWaveform();
 });
