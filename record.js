@@ -550,8 +550,9 @@ function applyPlatformAdaptiveUI() {
   const displayFlagUrl = `${RUNTIME_ENV.scheme}flags/#use-sc-content-sharing-picker`;
 
   if (!RUNTIME_ENV.isMac) {
-    // Windows, Linux, ChromeOS: Do not show macOS 15 ScreenCaptureKit flag; provide OS-native capture & audio guidance
+    // Windows, Linux, ChromeOS: Do not show macOS 15 ScreenCaptureKit flag or redundant tips
     if (flagBtn) flagBtn.style.display = 'none';
+    if (tipBox) tipBox.style.display = 'none';
     if (tipText) {
       if (RUNTIME_ENV.isWindows) {
         tipText.innerHTML =
@@ -576,6 +577,7 @@ function applyPlatformAdaptiveUI() {
     }
   } else {
     // macOS: Tailor flag helper to active Chromium browser (Chrome, Brave, Edge, Opera, Yandex, Vivaldi)
+    if (tipBox) tipBox.style.display = 'block';
     if (tipText && bName !== 'Chrome') {
       tipText.innerHTML =
         `<strong>Seeing “Choose a screen” instead of Screen 1 / Screen 2 thumbnails?</strong><br>` +
@@ -592,12 +594,12 @@ function applyPlatformAdaptiveUI() {
     }
   }
 
-  // Adapt audio tip banner and active recording subtext to active Chromium browser
+  // Adapt audio hint text and active recording subtext to active Chromium browser
   if (bName !== 'Chrome') {
-    const audioBannerSpans = document.querySelectorAll('.audio-tip-banner summary > span');
-    if (audioBannerSpans && audioBannerSpans.length >= 2) {
-      audioBannerSpans[1].innerHTML =
-        `Want computer sound too? Tick <strong>“Share audio”</strong> in ${bName}’s share dialog.`;
+    const audioHintText = document.getElementById('audioHintText');
+    if (audioHintText) {
+      audioHintText.innerHTML =
+        `System Audio: Tick <strong>“Share audio”</strong> in ${bName} prompt`;
     }
     const recSubtext = document.getElementById('recordingSurfaceSubtext');
     if (recSubtext) {
@@ -876,11 +878,29 @@ async function selectScreen() {
     }
 
     // Update UI
-    selectScreenBtn.innerHTML = `<span class="btn-icon">${UI_ICONS.check}</span> Screen Selected`;
+    selectScreenBtn.innerHTML = `<span class="btn-icon">${UI_ICONS.refresh}</span> Change Screen`;
     selectScreenBtn.classList.remove('btn-primary');
     selectScreenBtn.classList.add('btn-outline');
     selectScreenBtn.disabled = false; // Allow user to click again to switch screens
     document.getElementById('displayTile')?.classList.add('is-configured');
+    
+    // Attach live screen thumbnail preview
+    const liveScreenPreview = document.getElementById('liveScreenPreview');
+    const screenPreviewVideo = document.getElementById('screenPreviewVideo');
+    const screenPreviewPillText = document.getElementById('screenPreviewPillText');
+    if (liveScreenPreview && screenPreviewVideo) {
+      try {
+        screenPreviewVideo.srcObject = mediaStream;
+        screenPreviewVideo.muted = true;
+        liveScreenPreview.style.display = 'block';
+        if (screenPreviewPillText) {
+          const surfaceName = detectedDisplaySurface === 'browser' ? 'Chrome Tab' : (detectedDisplaySurface === 'window' ? 'Window' : 'Display');
+          screenPreviewPillText.textContent = `${surfaceName} Live Feed`;
+        }
+      } catch (err) {
+        console.warn('[Record] Could not set screen preview srcObject:', err);
+      }
+    }
     
     screenStatus.style.display = 'inline-flex';
     const hasAudio = mediaStream.getAudioTracks().length > 0;
@@ -1297,6 +1317,11 @@ function resetUI() {
   selectScreenBtn.classList.add('btn-primary');
   selectScreenBtn.classList.remove('btn-outline');
   
+  const liveScreenPreview = document.getElementById('liveScreenPreview');
+  const screenPreviewVideo = document.getElementById('screenPreviewVideo');
+  if (liveScreenPreview) liveScreenPreview.style.display = 'none';
+  if (screenPreviewVideo) screenPreviewVideo.srcObject = null;
+  
   startRecordingBtn.disabled = false;
   startRecordingBtn.innerHTML = '<span class="rec-pulse-icon"></span> Start Recording';
   
@@ -1529,6 +1554,8 @@ async function executeActualRecording() {
     // face circle is NEVER burned into the screen video (the webcam is recorded on its own synchronized
     // studio track and composited cleanly in the Editor).
     if (liveCameraPreview) liveCameraPreview.style.display = 'none';
+    const liveScreenPreview = document.getElementById('liveScreenPreview');
+    if (liveScreenPreview) liveScreenPreview.style.display = 'none';
     if (cameraOverlay) {
       cameraOverlay.classList.remove('active');
       cameraOverlay.style.display = 'none';
@@ -2998,7 +3025,7 @@ function dismissWelcomeBanner() {
     banner.classList.add('hidden');
   }
   try {
-    localStorage.setItem('cursordemo.welcomeBannerDismissed', 'true');
+    sessionStorage.setItem('cursordemo.welcomeBannerDismissed', 'true');
   } catch (_) {}
 }
 
@@ -3096,11 +3123,14 @@ function setupDiscordAndWelcomeUI() {
   // Welcome banner & modal controls
   const welcomeBanner = document.getElementById('welcomeBanner');
   try {
-    if (localStorage.getItem('cursordemo.welcomeBannerDismissed') === 'true' && !urlParams.get('welcome')) {
+    // Clear any previous permanent dismissal so the banner is restored for the user
+    localStorage.removeItem('cursordemo.welcomeBannerDismissed');
+    if (sessionStorage.getItem('cursordemo.welcomeBannerDismissed') === 'true' && !urlParams.get('welcome')) {
       welcomeBanner?.classList.add('hidden');
     }
   } catch (_) {}
 
+  document.getElementById('topbarGuideBtn')?.addEventListener('click', openWelcomeModal);
   document.getElementById('dismissWelcomeBannerBtn')?.addEventListener('click', dismissWelcomeBanner);
   document.getElementById('openWelcomeModalBtn')?.addEventListener('click', openWelcomeModal);
   document.getElementById('closeWelcomeModal')?.addEventListener('click', closeWelcomeModal);

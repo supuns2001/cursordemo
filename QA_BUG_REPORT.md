@@ -1,8 +1,8 @@
 # QA Bug Report — CursorDemo Screen Recorder (v1.4.0)
 
-> **Document Status:** All 10 Bugs Resolved — Verified & Production Ready  
+> **Document Status:** QA Part 2 Analysis Completed  
 > **Environment:** Chrome / Chromium MV3 (Desktop)  
-> **Scope:** Capture, Telemetry, Editor, Video Processor, UI Components  
+> **Scope:** Capture, Telemetry, Editor, Video Processor, UI Components, Timeline  
 > **Verification Status:** 100% Passed (`scripts/verify.js` & `scripts/build.js`)  
 > **Author:** QA Engineering Team  
 
@@ -10,9 +10,9 @@
 
 ## 1. Executive Summary
 
-| Total Bugs | Resolved | Open | Critical (P1) | High (P1/P2) | Medium (P2/P3) | Low (P3) |
+| Total Items | Resolved | Open (QA Part 2) | Critical (P1) | High (P1/P2) | Medium (P2/P3) | Feature / Enhancement |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **12** | **12** | **0** | **0 Open** (1 Resolved) | **0 Open** (3 Resolved) | **0 Open** (5 Resolved) | **0 Open** (3 Resolved) |
+| **14** | **12** | **2 Open** | **0 Open** (1 Resolved) | **0 Open** (3 Resolved) | **1 Open** (5 Resolved) | **1 Open Feature Gap** |
 
 ---
 
@@ -32,6 +32,8 @@
 | **BUG-010** | "Show Click Highlight / Ripples" Fails During Video Export | [editor.js:7923](editor.js#L7923), [video-processor.js:1473](video-processor.js#L1473), [video-processor.js:1520](video-processor.js#L1520) | **Medium** | **P2** | `Resolved` | Exporting recording without active tab telemetry, or when exportSettings drops clickEnabled | clickEnabled forwarded, _dedupedClicks reset per export, telemetry notice shown. |
 | **BUG-011** | Spurious Chrome Extension Errors on Missing Camera/Mic Hardware Fallback | [record.js:1075](record.js#L1075), [record.js:1120](record.js#L1120) | **Low** | **P3** | `Resolved` | User without webcam/mic enables Face Cam or Microphone in recorder deck | Fast-paths non-existent hardware without redundant calls; logs benign device absence at info level. |
 | **BUG-012** | Stationary Cursor Highlight Rendered When Telemetry Is Absent | [zoom-analyzer.js:1306](zoom-analyzer.js#L1306), [editor.js:639](editor.js#L639), [editor.js:2550](editor.js#L2550) | **Medium** | **P2** | `Resolved` | User records a restricted page (`chrome-extension://*`, `chrome://*`) and enables Cursor Highlight | Returns null instead of synthetic static focal points; shows clear telemetry notification in UI. |
+| **BUG-013** | Pulse Style & Ripple Waves Lack Immediate Visual Feedback on Change | [editor.js:2436](editor.js#L2436), [editor.js:7938](editor.js#L7938) | **Medium** | **P2** | `Open` | User selects different Pulse Style or Ripple Waves from dropdowns while video is paused | No visible preview on video canvas or sandbox, leading user to believe dropdowns are broken. |
+| **GAP-001** | Middle-Cut / Video Splitting & Non-Contiguous Trimming Not Supported | [editor.js:3812](editor.js#L3812), [editor.js:6030](editor.js#L6030), [video-processor.js:219](video-processor.js#L219) | **Feature Gap** | **P2** | `Open` | User attempts to cut/delete an unwanted section from the middle of the video | Timeline only supports 2-point start/end trim; `Split (S)` only splits Zoom Segments. |
 
 ---
 
@@ -293,3 +295,54 @@
 * **Fix Applied:**
   1. Guarded `resolveCursorHighlightPos` in `zoom-analyzer.js` to immediately return `null` when `cursorData` is empty or missing.
   2. Added informative tooltip on `#cursorHighlightEnabled` and toast notification when enabled without cursor telemetry.
+
+---
+
+### BUG-013: Pulse Style & Ripple Waves Lack Immediate Visual Feedback on Change
+
+* **Module / File:** `editor.js` (Lines 2436-2451, 7938-8032), `editor.html` (Lines 4284-4342)
+* **Severity:** **Medium** | **Priority:** **P2** | **Status:** `Open`
+* **Trigger Condition:** User opens "Cursor & Interaction" sidebar and changes "Pulse Style" (e.g. from Radiating Ripple to Expanding Shockwave) or "Ripple Waves" (e.g. from 2 Waves to 3 Waves) while video is paused.
+* **Steps to Reproduce:**
+  1. Record a video and open the Studio Editor.
+  2. Click the Cursor & Interaction icon on the right dock rail to open its inspector card.
+  3. Change the dropdown "Pulse Style" from *Radiating Ripple* to *Expanding Shockwave*.
+  4. Change the dropdown "Ripple Waves" from *2 Waves* to *3 Waves*.
+* **Actual Result:**
+  * Nothing changes on the main video canvas or in the sidebar. The UI gives zero visual confirmation that the option was applied.
+  * Users commonly mistake the persistent yellow halo (which is Cursor Highlight) for the pulse effect and assume the dropdowns are non-functional / broken.
+* **Expected Result:**
+  * Changing either dropdown should immediately trigger an animated preview of the selected wave style (either right inside the "Live Pulse Test" sandbox card, and/or momentarily at the cursor position on the preview canvas) so the user instantly sees the visual difference between Shockwave, Radiating Ripple, and 1/2/3 waves.
+* **Root Cause:**
+  1. **Playback Window Restriction:** On the main video preview, `drawClickEffectsOnCanvas()` strictly evaluates `currentTime` against recorded clicks (`[click.timestamp - 80ms, click.timestamp + 520ms]`). When paused at `00:00` where no click occurred, 0 clicks exist to draw, making `requestPreviewRedraw()` a visual no-op for click ripples.
+  2. **Passive Sandbox:** The `#rippleTestArea` sandbox only listens to manual click events and does not automatically fire a preview pulse upon dropdown option changes.
+  3. **Canvas Dimension / Lifecycle Desync:** `setupRippleSandbox()` runs `resizeCanvas()` once on DOM load when `#cursorSection` is hidden (`display: none`). Its bounding rect is `0x0` (falling back to `400x110`), and `resizeCanvas()` is never re-run when switching to the Cursor tab, causing canvas resolution and DPR mismatch.
+* **Proposed Remediation:**
+  1. Automatically trigger a demonstration ripple in the "Live Pulse Test" sandbox whenever `clickStyle`, `clickWaves`, `clickColor`, or `clickForce` changes.
+  2. Re-trigger `resizeCanvas()` whenever the Cursor drawer panel is opened or toggled.
+  3. Optionally trigger a momentary preview ripple at the cursor's current canvas location on dropdown change.
+
+---
+
+### GAP-001: Middle-Cut / Video Splitting & Non-Contiguous Trimming Not Supported
+
+* **Module / File:** `editor.js` (Lines 3774-3815, 6030-6117), `video-processor.js` (Lines 219-225, 660, 787-1110)
+* **Severity:** **Feature Gap / Architectural Limitation** | **Priority:** **P2** | **Status:** `Open`
+* **Trigger Condition:** User attempts to cut, slice, or delete an unwanted section from the middle of the recorded video on the timeline.
+* **Steps to Reproduce:**
+  1. Open a recording with mistakes or pauses in the middle of the timeline.
+  2. Move playhead to the middle and click the timeline toolbar `Split (S)` button.
+* **Actual Result:**
+  * The `Split (S)` button does not cut the video; it only splits or creates a **Zoom Segment** (`zoomSegments`) — the blue zoom camera pill.
+  * The yellow scissor handles on the timeline only drag inward from the very beginning (`trimStart`) and very end (`trimEnd`).
+  * There is no tool or UI to mark an IN/OUT slice in the middle of the video, delete it, or export a stitched video excluding the cut middle section.
+* **Expected Result:**
+  * Capability to perform a middle-cut / razor slice (e.g. cut section from 0:15 to 0:30, ripple delete, and seamlessly join 0:00-0:15 with 0:30-end in both preview playback and exported MP4/WebM).
+* **Root Cause:**
+  1. **Single Linear Range Data Model:** `trimHandles` is modeled strictly as `{ start: number, end: number }` (single continuous range from `start` to `end`).
+  2. **Linear Rendering Pipeline in `video-processor.js`:** Export iterates linearly through `currentTime` from `startTime` to `endTime`: `await this.processFrames(zoomSegments, videoWidth, videoHeight, startTime, endTime, targetFps, onProgress)`. It does not support non-contiguous frame intervals or multiple video segments.
+  3. **Misleading UI affordance:** The toolbar button `Split (S)` has a split/scissor icon and shortcut that video editors expect to slice video tracks, but its implementation (`splitAtPlayhead()`) only partitions zoom telemetry pills.
+* **Proposed Architecture for Future Implementation:**
+  1. **Multi-Segment Model:** Transition `trimHandles` to a list of active timeline intervals: `activeSegments: [{ start: number, end: number }, ...]`.
+  2. **Timeline Slice UI:** Allow pressing `S` or a dedicated Razor tool to create a cut boundary on the video track, select a middle slice, and press `Delete` to remove it (ripple-join).
+  3. **Non-Contiguous Playback & Export:** Update playback loop in `editor.js` to jump across deleted gaps, and update `video-processor.js` to process frames across each active segment into a continuous encoded stream.

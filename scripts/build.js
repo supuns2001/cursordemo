@@ -118,8 +118,13 @@ for (const dir of runtimeDirs) {
 createZip(unpackedDir, genericZip);
 fs.copyFileSync(genericZip, versionedZip);
 
+// Keep root cursordemo.zip synchronized with latest build
+const rootZip = path.join(rootDir, 'cursordemo.zip');
+fs.copyFileSync(genericZip, rootZip);
+
 const sizeKB = (fs.statSync(genericZip).size / 1024).toFixed(1);
 console.log(`✅ Built CursorDemo v${version}`);
 console.log(`   Unpacked: ${path.relative(rootDir, unpackedDir)}/`);
 console.log(`   Archive:  ${path.relative(rootDir, genericZip)} (${sizeKB} KB)`);
 console.log(`   Version:  ${path.relative(rootDir, versionedZip)} (${sizeKB} KB)`);
+console.log(`   Root Zip: ${path.relative(rootDir, rootZip)} (${sizeKB} KB)`);

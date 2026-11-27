@@ -288,9 +288,10 @@ let timelineProgressFill;
 let trimmedLeft, trimmedRight, playheadElement, timeMarkers, timeDisplay, leftLabel;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', function() {
-  debugLog('[Editor] DOM loaded');
-  
+function initEditorDom() {
+  debugLog('[Editor] DOM initialized');
+  console.log('%c[CursorDemo Editor] Loaded with Diagnostic Alerts', 'background: #10b981; color: #fff; font-size: 14px; padding: 4px;');
+
   // Get DOM elements
   loadingOverlay = document.getElementById('loadingOverlay');
   emptyState = document.getElementById('emptyState');
@@ -321,20 +322,20 @@ document.addEventListener('DOMContentLoaded', function() {
   timeDisplay = document.getElementById('timeDisplay');
   leftLabel = document.getElementById('leftLabel');
   timelineProgressFill = document.getElementById('timelineProgressFill');
-  
+
   // Initialize classes
   analyzer = new ZoomAnalyzer();
   analyzer.cameraStyle = settings.cameraStyle;
   analyzer.adaptiveEdgeZoom = settings.adaptiveEdgeZoom !== false;
   processor = new VideoProcessor();
-  
+
   // Setup event listeners
   setupEventListeners();
   setupExportModal();
   setupReviewModal();
   setupDiscordModal();
   setupDragInteractions();
-  
+
   // Initialize UI to match settings
   const showBrowserFrameCheckbox = document.getElementById('showBrowserFrame');
   const showShadowCheckbox = document.getElementById('showShadow');
@@ -342,8 +343,8 @@ document.addEventListener('DOMContentLoaded', function() {
     showBrowserFrameCheckbox.checked = settings.cleanBrowser !== false;
     const hint = document.getElementById('browserFrameHint');
     if (hint) {
-      hint.textContent = showBrowserFrameCheckbox.checked 
-        ? 'Clean browser enabled • browser tabs & address bar cropped' 
+      hint.textContent = showBrowserFrameCheckbox.checked
+        ? 'Clean browser enabled • browser tabs & address bar cropped'
         : 'Original browser address bar & tabs shown';
     }
   }
@@ -366,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (windowRadiusSelect && settings.borderRadius !== undefined) {
     windowRadiusSelect.value = String(settings.borderRadius);
   }
-  
+
   // Initialize Click Ripple & Cursor Highlight settings
   const clickEnabledCheckbox = document.getElementById('clickEnabled');
   const cursorHighlightCheckbox = document.getElementById('cursorHighlightEnabled');
@@ -396,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (Number.isFinite(savedHlSize) && savedHlSize >= 0.5 && savedHlSize <= 2.5) {
       settings.cursorHighlightSize = savedHlSize;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   if (clickEnabledCheckbox) {
     clickEnabledCheckbox.checked = settings.clickEnabled !== false && settings.clickStyle !== 'none';
@@ -439,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
     clickStyleRow.style.opacity = '0.5';
     if (clickWavesRow) clickWavesRow.style.opacity = '0.5';
   }
-  
+
   // Initialize click color selection
   const colorOptions = document.querySelectorAll('.color-option');
   colorOptions.forEach(opt => {
@@ -447,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
       opt.classList.add('selected');
     }
   });
-  
+
   // Initialize custom color picker and hex input
   const customColorPicker = document.getElementById('customColorPicker');
   const hexColorInput = document.getElementById('hexColorInput');
@@ -465,10 +466,10 @@ document.addEventListener('DOMContentLoaded', function() {
     customColorPicker.value = currentColor;
     hexColorInput.value = currentColor;
   }
-  
+
   // Setup Interactive Live Ripple Sandbox in sidebar
   setupRippleSandbox();
-  
+
   // Initialize background tab state
   const bgGrid = document.getElementById('bgGrid');
   const bgGridMac = document.getElementById('bgGridMac');
@@ -494,19 +495,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (bgGrid) { bgGrid.classList.remove('hidden'); bgGrid.style.display = 'grid'; }
     if (bgGridMac) { bgGridMac.classList.add('hidden'); bgGridMac.style.display = 'none'; }
   }
-  
+
   // Load data
   init();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initEditorDom);
+} else {
+  initEditorDom();
+}
 
 async function init() {
   try {
     debugLog('[Editor] Fetching recording data...');
-    
+
     let response = null;
     let attempts = 0;
     const hasExtensionRuntime = (typeof chrome !== 'undefined' && typeof chrome?.runtime?.sendMessage === 'function');
-    
+
     while (!response && attempts < (hasExtensionRuntime ? 10 : 0)) {
       try {
         response = await chrome.runtime.sendMessage({ action: 'getRecordingData' });
@@ -521,7 +528,7 @@ async function init() {
       }
       attempts++;
     }
-    
+
     if (!response || !response.videoData) {
       // Check query param ?videoId=...
       const queryVideoId = new URLSearchParams(window.location.search).get('videoId');
@@ -556,7 +563,7 @@ async function init() {
         }
       }
     }
-    
+
     if (!response || !response.videoData) {
       // Fallback: Check chrome.storage.local if service worker terminated
       try {
@@ -581,12 +588,12 @@ async function init() {
         console.warn('[Editor] Storage fallback recovery failed:', fallbackErr);
       }
     }
-    
+
     if (!response || !response.videoData) {
       showEmptyState();
       return;
     }
-    
+
     cursorData = response.cursorData || [];
     if (cursorData.length === 0) {
       try {
@@ -597,7 +604,7 @@ async function init() {
             debugLog('[Editor] Fallback recovered cursorData from chrome.storage.local:', cursorData.length);
           }
         }
-      } catch (err) {}
+      } catch (err) { }
     }
     // Secondary fallback: recover metadata + cursorData from IndexedDB (videoId + '_meta')
     if (cursorData.length === 0 && typeof response.videoData === 'string' && response.videoData.startsWith('video_')) {
@@ -616,7 +623,7 @@ async function init() {
           if (metaObj && metaObj.displaySurface && !response.displaySurface) response.displaySurface = metaObj.displaySurface;
           if (metaObj && metaObj.cameraVideoId && !response.cameraVideoId) response.cameraVideoId = metaObj.cameraVideoId;
         }
-      } catch (_) {}
+      } catch (_) { }
     }
     videoWidth = response.videoWidth || 1920;
     videoHeight = response.videoHeight || 1080;
@@ -630,7 +637,7 @@ async function init() {
       debugLog('[Editor] Canonical duration from recording metadata:', videoDuration, 'seconds');
     }
     cameraOverlayEnabled = response.cameraOverlayEnabled || false;
-    
+
     // Log cursor data info
     debugLog('[Editor] Cursor data points:', cursorData.length, 'Surface:', displaySurface);
     const clicks = cursorData.filter(d => d.type === 'click' || d.type === 'doubleclick');
@@ -653,9 +660,9 @@ async function init() {
         cursorHlToggleRow.removeAttribute('title');
       }
     }
-    
+
     let blob;
-    
+
     // Check if video is stored in IndexedDB
     if (response.videoStoredInIndexedDB && typeof response.videoData === 'string' && !response.videoData.startsWith('data:')) {
       currentVideoId = response.videoData;
@@ -675,9 +682,9 @@ async function init() {
         console.error('[Editor] Invalid video data format:', response.videoData.substring(0, 100));
         throw new Error('Invalid video data format');
       }
-      
+
       debugLog('[Editor] Loading video from data URL, size:', response.videoData.length, 'chars');
-      
+
       try {
         // Fast path: use native fetch() to convert data URL to Blob without blocking UI thread
         blob = await fetch(response.videoData).then(r => r.blob());
@@ -691,7 +698,7 @@ async function init() {
           const mimeTypeMatch = response.videoData.match(/^data:([^;]+)/);
           const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'video/webm';
           const base64Data = response.videoData.substring(base64Index + 8);
-          
+
           const binaryString = atob(base64Data);
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) {
@@ -704,11 +711,11 @@ async function init() {
         }
       }
     }
-    
+
     if (!blob || blob.size === 0) {
       throw new Error('Video blob is empty - recording may have failed');
     }
-    
+
     currentVideoBlob = blob; // Store module-level blob for export
     debugLog('[Editor] Video blob size:', blob.size, 'bytes');
 
@@ -731,13 +738,13 @@ async function init() {
       }
     }
     updateFaceCamUI();
-    
+
     // Validate blob has WebM (EBML) or MP4 (ISO BMFF) magic bytes
     const firstBytes = await blob.slice(0, 12).arrayBuffer();
     const view = new Uint8Array(firstBytes);
     const magicBytes = Array.from(view.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join(' ');
     debugLog('[Editor] Reconstructed blob first 8 bytes (hex):', magicBytes);
-    
+
     const isWebM = view.length >= 4 &&
       view[0] === 0x1A && view[1] === 0x45 && view[2] === 0xDF && view[3] === 0xA3;
     const boxType = view.length >= 8
@@ -753,9 +760,9 @@ async function init() {
       console.error('[Editor] Expected WebM (1A 45 DF A3) or MP4 (ftyp/moov/mdat), Got:', magicBytes);
       throw new Error('Video blob is corrupted - invalid video container format. Magic bytes: ' + magicBytes);
     }
-    
+
     const url = URL.createObjectURL(blob);
-    
+
     try {
       await loadVideo(url);
     } catch (loadError) {
@@ -764,12 +771,12 @@ async function init() {
       URL.revokeObjectURL(url);
       throw new Error('Failed to load video: ' + (loadError.message || loadError.toString()));
     }
-    
+
   } catch (error) {
     // Handle Event objects and Error objects properly
     let errorMessage = 'Unknown error';
     let errorDetails = {};
-    
+
     if (error instanceof Error) {
       errorMessage = error.message || 'Unknown error';
       errorDetails = {
@@ -794,11 +801,11 @@ async function init() {
     } else {
       errorMessage = String(error);
     }
-    
+
     console.error('[Editor] Init error:', error);
     console.error('[Editor] Error details:', errorDetails);
     console.error('[Editor] Error type:', typeof error, error instanceof Error ? '(Error)' : error instanceof Event ? '(Event)' : '(Other)');
-    
+
     // Show user-friendly Discord support modal or fallback alert
     let friendlySummary = 'Error loading recording: ' + errorMessage + '. Please try recording again or join our Discord for instant help.';
     if (errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
@@ -823,7 +830,7 @@ async function init() {
     } else {
       alert('Error loading recording: ' + errorMessage + '\n\nPlease try recording again.');
     }
-    
+
     showEmptyState();
   }
 }
@@ -1103,7 +1110,7 @@ function syncCameraVideoWithMain() {
       } catch (e) { /* ignore seek race */ }
     }
     if (cameraVideo.paused && !cameraVideo.ended) {
-      cameraVideo.play().catch(() => {});
+      cameraVideo.play().catch(() => { });
     }
   }
 }
@@ -1909,7 +1916,7 @@ function setupEventListeners() {
   document.getElementById('muteBtn')?.addEventListener('click', toggleMute);
 
   // Playback speed selector
-  document.getElementById('playbackSpeed')?.addEventListener('change', function() {
+  document.getElementById('playbackSpeed')?.addEventListener('change', function () {
     if (video) {
       video.playbackRate = parseFloat(this.value);
       settings.playbackSpeed = video.playbackRate;
@@ -1922,11 +1929,11 @@ function setupEventListeners() {
   document.getElementById('shortcutsBtn')?.addEventListener('click', () => toggleShortcutsModal(true));
   document.getElementById('closeShortcutsModal')?.addEventListener('click', () => toggleShortcutsModal(false));
   document.getElementById('shortcutsBackdrop')?.addEventListener('click', () => toggleShortcutsModal(false));
-  
+
   // New recording button
-  document.getElementById('newRecordingBtn').addEventListener('click', startNewRecording);
-  document.getElementById('loadVideoBtn').addEventListener('click', loadVideoFromFile);
-  
+  document.getElementById('newRecordingBtn')?.addEventListener('click', startNewRecording);
+  document.getElementById('loadVideoBtn')?.addEventListener('click', loadVideoFromFile);
+
   // Topbar shortcuts & actions
   document.getElementById('loadVideoTopBtn')?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1936,8 +1943,15 @@ function setupEventListeners() {
       loadVideoFromFile();
     }
   });
-  document.getElementById('newRecordingTopBtn')?.addEventListener('click', startNewRecording);
-  document.getElementById('exportTopBtn')?.addEventListener('click', exportVideo);
+  document.getElementById('newRecordingTopBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    startNewRecording();
+  });
+  document.getElementById('exportTopBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    exportVideo(e);
+  });
   document.getElementById('topbarUndoBtn')?.addEventListener('click', (e) => {
     e.stopPropagation();
     undo();
@@ -1953,23 +1967,37 @@ function setupEventListeners() {
     }
     showToast('In Studio Video Editor');
   });
-  
+
   // Export button
-  document.getElementById('exportBtn').addEventListener('click', exportVideo);
-  
+  document.getElementById('exportBtn')?.addEventListener('click', (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    exportVideo(e);
+  });
+
+  // Capture-phase document delegation to guarantee Export button clicks ALWAYS trigger
+  document.addEventListener('click', (e) => {
+    const btn = e.target && typeof e.target.closest === 'function' ? (e.target.closest('#exportTopBtn') || e.target.closest('#exportBtn')) : null;
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      exportVideo(e);
+    }
+  }, true);
+
   // Drag-and-drop video file on empty state
   const emptyStateDrop = document.getElementById('emptyState');
   if (emptyStateDrop) {
-    emptyStateDrop.addEventListener('dragover', function(e) {
+    emptyStateDrop.addEventListener('dragover', function (e) {
       e.preventDefault();
       e.stopPropagation();
       this.classList.add('drag-over');
     });
-    emptyStateDrop.addEventListener('dragleave', function(e) {
+    emptyStateDrop.addEventListener('dragleave', function (e) {
       e.preventDefault();
       this.classList.remove('drag-over');
     });
-    emptyStateDrop.addEventListener('drop', function(e) {
+    emptyStateDrop.addEventListener('drop', function (e) {
       e.preventDefault();
       e.stopPropagation();
       this.classList.remove('drag-over');
@@ -1981,15 +2009,15 @@ function setupEventListeners() {
       }
     });
   }
-  
+
   // Also allow drag-and-drop on preview area
   const previewAreaDrop = document.querySelector('.preview-area');
   if (previewAreaDrop) {
-    previewAreaDrop.addEventListener('dragover', function(e) {
+    previewAreaDrop.addEventListener('dragover', function (e) {
       e.preventDefault();
       e.stopPropagation();
     });
-    previewAreaDrop.addEventListener('drop', function(e) {
+    previewAreaDrop.addEventListener('drop', function (e) {
       e.preventDefault();
       e.stopPropagation();
       const file = e.dataTransfer?.files?.[0];
@@ -1998,13 +2026,13 @@ function setupEventListeners() {
       }
     });
   }
-  
+
   // Toolbar buttons
   document.getElementById('resetTimelineBtn').addEventListener('click', resetTimeline);
-  
+
   // Background options (only gradients now)
   document.querySelectorAll('.bg-option').forEach(opt => {
-    opt.addEventListener('click', function() {
+    opt.addEventListener('click', function () {
       const bg = this.dataset.bg;
       document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('selected'));
       this.classList.add('selected');
@@ -2013,17 +2041,17 @@ function setupEventListeners() {
       updateBackground();
     });
   });
-  
+
   // Background tabs
   document.querySelectorAll('.bg-tab').forEach(tab => {
-    tab.addEventListener('click', function() {
+    tab.addEventListener('click', function () {
       document.querySelectorAll('.bg-tab').forEach(t => t.classList.remove('active'));
       this.classList.add('active');
-      
+
       const bgType = this.dataset.bgType;
       const bgGridMac = document.getElementById('bgGridMac');
       const bgGrid = document.getElementById('bgGrid');
-      
+
       if (bgType === 'mac') {
         if (bgGridMac) { bgGridMac.classList.remove('hidden'); bgGridMac.style.display = 'grid'; }
         if (bgGrid) { bgGrid.classList.add('hidden'); bgGrid.style.display = 'none'; }
@@ -2057,14 +2085,14 @@ function setupEventListeners() {
       }
     });
   });
-  
+
   // Settings dropdowns
-  document.getElementById('aspectSelect').addEventListener('change', function() {
+  document.getElementById('aspectSelect').addEventListener('change', function () {
     settings.aspectRatio = this.value;
     updateFrameSize();
   });
 
-  document.getElementById('showMacWindowHeader')?.addEventListener('change', function() {
+  document.getElementById('showMacWindowHeader')?.addEventListener('change', function () {
     settings.showMacWindowHeader = this.checked;
     const macHeader = document.getElementById('macWindowHeader');
     if (macHeader) {
@@ -2076,16 +2104,16 @@ function setupEventListeners() {
     requestPreviewRedraw();
   });
 
-  document.getElementById('windowPadding')?.addEventListener('change', function() {
+  document.getElementById('windowPadding')?.addEventListener('change', function () {
     settings.padding = parseInt(this.value);
     updateFrameSize();
   });
 
-  document.getElementById('windowRadius')?.addEventListener('change', function() {
+  document.getElementById('windowRadius')?.addEventListener('change', function () {
     settings.borderRadius = parseInt(this.value);
     updateFrameSize();
   });
-  
+
   // Follow-mode camera feel (applies to preview and export)
   const cameraFeelHints = {
     smooth: 'Calm glide. Holds still while you work in one area, re-frames when you pause, and lines up each click.',
@@ -2129,7 +2157,7 @@ function setupEventListeners() {
   } catch (e) { /* storage unavailable */ }
   if (adaptiveEdgeZoomCheckbox) {
     adaptiveEdgeZoomCheckbox.checked = settings.adaptiveEdgeZoom !== false;
-    adaptiveEdgeZoomCheckbox.addEventListener('change', function() {
+    adaptiveEdgeZoomCheckbox.addEventListener('change', function () {
       settings.adaptiveEdgeZoom = this.checked;
       if (analyzer) {
         analyzer.adaptiveEdgeZoom = this.checked;
@@ -2144,7 +2172,7 @@ function setupEventListeners() {
     });
   }
 
-  document.getElementById('zoomDepth').addEventListener('change', function() {
+  document.getElementById('zoomDepth').addEventListener('change', function () {
     settings.zoomDepth = this.value;
     if (analyzer) {
       analyzer.ZOOM_LEVEL = zoomDepths[settings.zoomDepth];
@@ -2152,7 +2180,7 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('segModeFollowBtn')?.addEventListener('click', function() {
+  document.getElementById('segModeFollowBtn')?.addEventListener('click', function () {
     if (selectedZoomIndex >= 0 && selectedZoomIndex < zoomSegments.length) {
       saveState();
       const seg = zoomSegments[selectedZoomIndex];
@@ -2170,7 +2198,7 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('segModeFixedBtn')?.addEventListener('click', function() {
+  document.getElementById('segModeFixedBtn')?.addEventListener('click', function () {
     if (selectedZoomIndex >= 0 && selectedZoomIndex < zoomSegments.length) {
       saveState();
       const seg = zoomSegments[selectedZoomIndex];
@@ -2190,7 +2218,7 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('selectedSegmentMode')?.addEventListener('change', function() {
+  document.getElementById('selectedSegmentMode')?.addEventListener('change', function () {
     if (selectedZoomIndex >= 0 && selectedZoomIndex < zoomSegments.length) {
       saveState();
       const seg = zoomSegments[selectedZoomIndex];
@@ -2213,7 +2241,7 @@ function setupEventListeners() {
   });
 
   // Snap focal target directly to current cursor location (Screen Studio / Cursorful feature)
-  document.getElementById('btnSnapFocalToCursor')?.addEventListener('click', function() {
+  document.getElementById('btnSnapFocalToCursor')?.addEventListener('click', function () {
     if (selectedZoomIndex >= 0 && selectedZoomIndex < zoomSegments.length) {
       saveState();
       const seg = zoomSegments[selectedZoomIndex];
@@ -2224,7 +2252,7 @@ function setupEventListeners() {
       const focalRow = document.getElementById('inspectorFocalPositionRow');
       if (focalRow) focalRow.style.display = 'block';
       previewCanvas?.classList.add('focal-target-mode');
-      
+
       const timestamp = video.currentTime * 1000;
       const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
       const visibleHeight = Math.max(1, videoHeight - browserUIHeight);
@@ -2247,27 +2275,27 @@ function setupEventListeners() {
   });
 
   // Duplicate selected zoom button
-  document.getElementById('duplicateSelectedZoomBtn')?.addEventListener('click', function() {
+  document.getElementById('duplicateSelectedZoomBtn')?.addEventListener('click', function () {
     duplicateSelectedZoom();
   });
 
   // Preset focal spots (Center, Top-Left, etc.)
   document.querySelectorAll('.btn-preset-spot').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function () {
       const spot = this.dataset.spot;
       if (spot) setZoomFocalPreset(spot);
     });
   });
 
   // Edge sharpening toggle
-  document.getElementById('showSharpening')?.addEventListener('change', function() {
+  document.getElementById('showSharpening')?.addEventListener('change', function () {
     settings.sharpening = this.checked;
     debugLog('[Editor] Edge sharpening:', settings.sharpening ? 'enabled' : 'disabled');
     requestPreviewRedraw();
   });
 
   // Re-analyze zoom button
-  document.getElementById('reanalyzeZoomBtn')?.addEventListener('click', function() {
+  document.getElementById('reanalyzeZoomBtn')?.addEventListener('click', function () {
     if (!videoLoaded || !analyzer) return;
     saveState();
     reanalyzeZoom();
@@ -2290,7 +2318,7 @@ function setupEventListeners() {
     if (timelineZoomMenu) timelineZoomMenu.style.display = 'none';
   }
 
-  sidebarAddZoomBtn?.addEventListener('click', function(e) {
+  sidebarAddZoomBtn?.addEventListener('click', function (e) {
     e.stopPropagation();
     if (!sidebarZoomMenu) return;
     const isShowing = sidebarZoomMenu.style.display === 'block';
@@ -2298,7 +2326,7 @@ function setupEventListeners() {
     sidebarZoomMenu.style.display = isShowing ? 'none' : 'block';
   });
 
-  addZoomBtn?.addEventListener('click', function(e) {
+  addZoomBtn?.addEventListener('click', function (e) {
     e.stopPropagation();
     if (!timelineZoomMenu) return;
     const isShowing = timelineZoomMenu.style.display === 'block';
@@ -2306,12 +2334,12 @@ function setupEventListeners() {
     timelineZoomMenu.style.display = isShowing ? 'none' : 'block';
   });
 
-  document.addEventListener('click', function() {
+  document.addEventListener('click', function () {
     closeAllZoomMenus();
   });
 
   document.querySelectorAll('.zoom-mode-option-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
+    btn.addEventListener('click', function (e) {
       e.stopPropagation();
       const mode = this.dataset.mode || 'follow';
       closeAllZoomMenus();
@@ -2319,13 +2347,13 @@ function setupEventListeners() {
     });
   });
 
-  document.getElementById('quickAddFollowBtn')?.addEventListener('click', function(e) {
+  document.getElementById('quickAddFollowBtn')?.addEventListener('click', function (e) {
     e.stopPropagation();
     closeAllZoomMenus();
     addZoomAtCurrentTime('follow');
   });
 
-  document.getElementById('quickAddFixedBtn')?.addEventListener('click', function(e) {
+  document.getElementById('quickAddFixedBtn')?.addEventListener('click', function (e) {
     e.stopPropagation();
     closeAllZoomMenus();
     addZoomAtCurrentTime('fixed');
@@ -2338,7 +2366,7 @@ function setupEventListeners() {
     inspectorCustomZoomInput.addEventListener('focus', () => {
       _inspectorInputSavedState = false;
     });
-    inspectorCustomZoomInput.addEventListener('input', function() {
+    inspectorCustomZoomInput.addEventListener('input', function () {
       if (selectedZoomIndex >= 0 && selectedZoomIndex < zoomSegments.length) {
         const val = parseFloat(this.value);
         if (isFinite(val) && val >= 1.05 && val <= 3.50) {
@@ -2350,13 +2378,13 @@ function setupEventListeners() {
         }
       }
     });
-    inspectorCustomZoomInput.addEventListener('change', function() {
+    inspectorCustomZoomInput.addEventListener('change', function () {
       _inspectorInputSavedState = false;
     });
   }
 
   // Selected segment depth changer
-  document.getElementById('selectedSegmentDepth')?.addEventListener('change', function() {
+  document.getElementById('selectedSegmentDepth')?.addEventListener('change', function () {
     if (selectedZoomIndex >= 0 && selectedZoomIndex < zoomSegments.length) {
       if (this.value === 'custom') {
         const inp = document.getElementById('inspectorCustomZoomInput');
@@ -2380,17 +2408,17 @@ function setupEventListeners() {
   setupZoomEditControls();
 
   // Delete selected zoom button
-  document.getElementById('deleteSelectedZoomBtn')?.addEventListener('click', function() {
+  document.getElementById('deleteSelectedZoomBtn')?.addEventListener('click', function () {
     deleteSelectedZoom();
     requestPreviewRedraw();
   });
-  
+
   // Click Ripple Effects toggle
-  document.getElementById('clickEnabled')?.addEventListener('change', function() {
+  document.getElementById('clickEnabled')?.addEventListener('change', function () {
     const clickStyleSelect = document.getElementById('clickStyle');
     const clickStyleRow = document.getElementById('clickStyleRow');
     const clickWavesRow = document.getElementById('clickWavesRow');
-    
+
     settings.clickEnabled = this.checked;
     if (this.checked) {
       settings.clickStyle = clickStyleSelect ? clickStyleSelect.value : 'ripple';
@@ -2405,7 +2433,7 @@ function setupEventListeners() {
   });
 
   // Pulse style select
-  document.getElementById('clickStyle')?.addEventListener('change', function() {
+  document.getElementById('clickStyle')?.addEventListener('change', function () {
     if (document.getElementById('clickEnabled')?.checked) {
       settings.clickStyle = this.value;
     }
@@ -2417,14 +2445,14 @@ function setupEventListeners() {
   });
 
   // Ripple waves select
-  document.getElementById('clickWaves')?.addEventListener('change', function() {
+  document.getElementById('clickWaves')?.addEventListener('change', function () {
     settings.clickWaves = this.value;
     requestPreviewRedraw();
   });
-  
+
   // Click color options
   document.querySelectorAll('.color-option').forEach(opt => {
-    opt.addEventListener('click', function() {
+    opt.addEventListener('click', function () {
       document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
       this.classList.add('selected');
       settings.clickColor = this.dataset.color;
@@ -2445,11 +2473,11 @@ function setupEventListeners() {
       requestPreviewRedraw();
     });
   });
-  
+
   // Custom color picker
   const customColorPicker = document.getElementById('customColorPicker');
   if (customColorPicker) {
-    customColorPicker.addEventListener('input', function() {
+    customColorPicker.addEventListener('input', function () {
       const color = this.value;
       const hexColorInput = document.getElementById('hexColorInput');
       if (hexColorInput) hexColorInput.value = color;
@@ -2459,11 +2487,11 @@ function setupEventListeners() {
       requestPreviewRedraw();
     });
   }
-  
+
   // Hex color input
   const hexColorInput = document.getElementById('hexColorInput');
   if (hexColorInput) {
-    hexColorInput.addEventListener('input', function() {
+    hexColorInput.addEventListener('input', function () {
       let color = this.value.trim();
       // Add # if missing
       if (!color.startsWith('#')) {
@@ -2486,8 +2514,8 @@ function setupEventListeners() {
         requestPreviewRedraw();
       }
     });
-    
-    hexColorInput.addEventListener('blur', function() {
+
+    hexColorInput.addEventListener('blur', function () {
       let color = this.value.trim();
       // Add # if missing
       if (!color.startsWith('#')) {
@@ -2512,26 +2540,26 @@ function setupEventListeners() {
       requestPreviewRedraw();
     });
   }
-  
+
   // Click intensity option
-  document.getElementById('clickForce')?.addEventListener('change', function() {
+  document.getElementById('clickForce')?.addEventListener('change', function () {
     settings.clickForce = this.value;
     requestPreviewRedraw();
   });
-  
+
   // Browser frame toggle
   const showBrowserFrameCheckbox = document.getElementById('showBrowserFrame');
   const showShadowCheckbox = document.getElementById('showShadow');
-  
-  showBrowserFrameCheckbox?.addEventListener('change', function() {
+
+  showBrowserFrameCheckbox?.addEventListener('change', function () {
     settings.cleanBrowser = this.checked;
     settings.showBrowserFrame = !this.checked;
     debugLog('[Editor] Clean browser (crop tabs):', settings.cleanBrowser ? 'enabled (tabs cropped)' : 'disabled (original tabs shown)');
-    
+
     const hint = document.getElementById('browserFrameHint');
     if (hint) {
-      hint.textContent = settings.cleanBrowser 
-        ? 'Clean browser enabled • browser tabs & address bar cropped' 
+      hint.textContent = settings.cleanBrowser
+        ? 'Clean browser enabled • browser tabs & address bar cropped'
         : 'Original browser address bar & tabs shown';
     }
 
@@ -2549,12 +2577,12 @@ function setupEventListeners() {
     }
     requestPreviewRedraw();
   });
-  
+
   // Shadow effect toggle
-  showShadowCheckbox?.addEventListener('change', function() {
+  showShadowCheckbox?.addEventListener('change', function () {
     settings.showShadow = this.checked;
     debugLog('[Editor] Shadow effect:', settings.showShadow ? 'enabled' : 'disabled');
-    
+
     // Update preview shadow effect
     if (videoWindow) {
       if (settings.showShadow) {
@@ -2564,7 +2592,7 @@ function setupEventListeners() {
       }
     }
   });
-  
+
   // Initialize shadow effect on load
   if (showShadowCheckbox && videoWindow) {
     if (settings.showShadow) {
@@ -2573,13 +2601,13 @@ function setupEventListeners() {
       videoWindow.style.boxShadow = 'none';
     }
   }
-  
+
   // Cursor Highlight toggle & OpenScreen-style customization controls
-  document.getElementById('cursorHighlightEnabled')?.addEventListener('change', function() {
+  document.getElementById('cursorHighlightEnabled')?.addEventListener('change', function () {
     settings.cursorHighlight = this.checked;
     try {
       localStorage.setItem('cursordemo.cursorHighlight', this.checked ? 'true' : 'false');
-    } catch (_) {}
+    } catch (_) { }
     const controlsEl = document.getElementById('cursorHighlightControls');
     if (controlsEl) {
       controlsEl.style.display = this.checked ? 'flex' : 'none';
@@ -2594,27 +2622,27 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('cursorHighlightStyle')?.addEventListener('change', function() {
+  document.getElementById('cursorHighlightStyle')?.addEventListener('change', function () {
     settings.cursorHighlightStyle = this.value || 'halo';
     try {
       localStorage.setItem('cursordemo.cursorHighlightStyle', settings.cursorHighlightStyle);
-    } catch (_) {}
+    } catch (_) { }
     requestPreviewRedraw();
   });
 
-  document.getElementById('cursorHighlightSize')?.addEventListener('input', function() {
+  document.getElementById('cursorHighlightSize')?.addEventListener('input', function () {
     const pct = parseInt(this.value, 10) || 100;
     settings.cursorHighlightSize = Math.max(0.5, Math.min(2.5, pct / 100));
     const label = document.getElementById('cursorHighlightSizeValue');
     if (label) label.textContent = `${pct}%`;
     try {
       localStorage.setItem('cursordemo.cursorHighlightSize', String(settings.cursorHighlightSize));
-    } catch (_) {}
+    } catch (_) { }
     requestPreviewRedraw();
   });
 
   document.querySelectorAll('.cursor-hl-color-chip').forEach((chip) => {
-    chip.addEventListener('click', function() {
+    chip.addEventListener('click', function () {
       const col = this.getAttribute('data-hl-color') || '#ffab00';
       settings.cursorHighlightColor = col;
       const colorInp = document.getElementById('cursorHighlightColor');
@@ -2626,12 +2654,12 @@ function setupEventListeners() {
       });
       try {
         localStorage.setItem('cursordemo.cursorHighlightColor', col);
-      } catch (_) {}
+      } catch (_) { }
       requestPreviewRedraw();
     });
   });
 
-  document.getElementById('cursorHighlightColor')?.addEventListener('input', function() {
+  document.getElementById('cursorHighlightColor')?.addEventListener('input', function () {
     const col = this.value || '#ffab00';
     settings.cursorHighlightColor = col;
     document.querySelectorAll('.cursor-hl-color-chip').forEach((c) => {
@@ -2641,7 +2669,7 @@ function setupEventListeners() {
     });
     try {
       localStorage.setItem('cursordemo.cursorHighlightColor', col);
-    } catch (_) {}
+    } catch (_) { }
     requestPreviewRedraw();
   });
 
@@ -2666,7 +2694,7 @@ function setupEventListeners() {
       const savedW = parseInt(localStorage.getItem('cursordemo_inspector_width'), 10) || 340;
       inspectorDrawer.style.width = savedW + 'px';
     }
-    
+
     // Update dock tab buttons
     document.querySelectorAll('.inspector-tab-btn[data-inspector-tab]').forEach(b => {
       const active = b.dataset.inspectorTab === targetGroup;
@@ -2714,7 +2742,7 @@ function setupEventListeners() {
   }
 
   document.querySelectorAll('.inspector-tab-btn[data-inspector-tab]').forEach(tabBtn => {
-    tabBtn.addEventListener('click', function() {
+    tabBtn.addEventListener('click', function () {
       const targetGroup = this.dataset.inspectorTab || 'frame';
       if (this.classList.contains('active') && inspectorDrawer && !inspectorDrawer.classList.contains('collapsed')) {
         closeCategoryDrawer();
@@ -2732,7 +2760,7 @@ function setupEventListeners() {
   openCategory('frame');
 
   // Update topbar aspect ratio pill when aspectSelect changes
-  document.getElementById('aspectSelect')?.addEventListener('change', function() {
+  document.getElementById('aspectSelect')?.addEventListener('change', function () {
     const pill = document.getElementById('topbarAspectPill');
     if (pill) {
       pill.textContent = this.value === 'native' ? 'Native' : this.value;
@@ -3095,7 +3123,7 @@ function setupEventListeners() {
         document.body.classList.add('is-resizing-col');
         try {
           inspectorResizer.setPointerCapture(e.pointerId);
-        } catch (_) {}
+        } catch (_) { }
         e.preventDefault();
       });
 
@@ -3107,7 +3135,7 @@ function setupEventListeners() {
           const deltaX = startX - e.clientX;
           const maxAllowedWidth = Math.min(540, Math.floor(window.innerWidth * 0.45));
           const newWidth = Math.max(MIN_INSPECTOR_WIDTH, Math.min(maxAllowedWidth, Math.round(startWidth + deltaX)));
-          
+
           inspectorDrawer.style.width = newWidth + 'px';
           savedInspectorWidth = newWidth;
           updateFrameSize();
@@ -3122,7 +3150,7 @@ function setupEventListeners() {
         document.body.classList.remove('is-resizing-col');
         try {
           inspectorResizer.releasePointerCapture(e.pointerId);
-        } catch (_) {}
+        } catch (_) { }
         localStorage.setItem('cursordemo_inspector_width', savedInspectorWidth.toString());
         updateFrameSize();
       };
@@ -3157,7 +3185,7 @@ function setupEventListeners() {
         document.body.classList.add('is-resizing-row');
         try {
           timelineResizer.setPointerCapture(e.pointerId);
-        } catch (_) {}
+        } catch (_) { }
         e.preventDefault();
       });
 
@@ -3169,7 +3197,7 @@ function setupEventListeners() {
           const deltaY = startY - e.clientY;
           const maxAllowedHeight = Math.min(320, Math.floor(window.innerHeight * 0.45));
           const newHeight = Math.max(MIN_TIMELINE_HEIGHT, Math.min(maxAllowedHeight, Math.round(startHeight + deltaY)));
-          
+
           timelineContainer.style.height = newHeight + 'px';
           savedTimelineHeight = newHeight;
           updateFrameSize();
@@ -3187,7 +3215,7 @@ function setupEventListeners() {
         document.body.classList.remove('is-resizing-row');
         try {
           timelineResizer.releasePointerCapture(e.pointerId);
-        } catch (_) {}
+        } catch (_) { }
         localStorage.setItem('cursordemo_timeline_height', savedTimelineHeight.toString());
         updateFrameSize();
         if (typeof drawTimelineAudioWaveform === 'function') {
@@ -3216,13 +3244,13 @@ function setupEventListeners() {
   initPanelResizers();
 
   // Manual Blur controls
-  document.getElementById('addBlurBtn')?.addEventListener('click', function(e) {
+  document.getElementById('addBlurBtn')?.addEventListener('click', function (e) {
     e.stopPropagation();
     addBlurRegion();
   });
 
   ['sidebarAddBlurBtn', 'addBlurInspectorBtn'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', function(e) {
+    document.getElementById(id)?.addEventListener('click', function (e) {
       e.stopPropagation();
       addBlurRegion();
     });
@@ -3231,7 +3259,7 @@ function setupEventListeners() {
   ['drawBlurModeBtn', 'drawBlurOnCanvasBtn'].forEach(id => {
     const drawBtn = document.getElementById(id);
     if (drawBtn) {
-      drawBtn.addEventListener('click', function(e) {
+      drawBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         isDrawBlurMode = !isDrawBlurMode;
         syncDrawBlurModeButtonUI();
@@ -3242,7 +3270,7 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('blurTrackModeSelect')?.addEventListener('change', function() {
+  document.getElementById('blurTrackModeSelect')?.addEventListener('change', function () {
     if (selectedBlurIndex >= 0 && selectedBlurIndex < blurRegions.length) {
       saveState();
       blurRegions[selectedBlurIndex].mode = this.value;
@@ -3251,7 +3279,7 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('blurStyleSelect')?.addEventListener('change', function() {
+  document.getElementById('blurStyleSelect')?.addEventListener('change', function () {
     if (selectedBlurIndex >= 0 && selectedBlurIndex < blurRegions.length) {
       saveState();
       blurRegions[selectedBlurIndex].style = this.value;
@@ -3267,7 +3295,7 @@ function setupEventListeners() {
         saveState();
       }
     });
-    blurIntensitySliderEl.addEventListener('input', function() {
+    blurIntensitySliderEl.addEventListener('input', function () {
       const val = parseInt(this.value, 10) || 18;
       const label = document.getElementById('blurIntensityValue');
       if (label) label.textContent = `${val}px`;
@@ -3287,7 +3315,7 @@ function setupEventListeners() {
   }
 
   document.querySelectorAll('.blur-intensity-preset-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function () {
       const val = parseInt(this.dataset.intensity, 10) || 18;
       if (selectedBlurIndex >= 0 && selectedBlurIndex < blurRegions.length) {
         saveState();
@@ -3298,7 +3326,7 @@ function setupEventListeners() {
     });
   });
 
-  document.getElementById('blurRadiusSelect')?.addEventListener('change', function() {
+  document.getElementById('blurRadiusSelect')?.addEventListener('change', function () {
     if (selectedBlurIndex >= 0 && selectedBlurIndex < blurRegions.length) {
       saveState();
       blurRegions[selectedBlurIndex].radius = parseInt(this.value, 10) || 0;
@@ -3306,7 +3334,7 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('blurFullVideoToggle')?.addEventListener('change', function() {
+  document.getElementById('blurFullVideoToggle')?.addEventListener('change', function () {
     if (selectedBlurIndex >= 0 && selectedBlurIndex < blurRegions.length) {
       saveState();
       blurRegions[selectedBlurIndex].fullVideo = this.checked;
@@ -3315,16 +3343,16 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('duplicateSelectedBlurBtn')?.addEventListener('click', function() {
+  document.getElementById('duplicateSelectedBlurBtn')?.addEventListener('click', function () {
     duplicateSelectedBlur();
   });
 
-  document.getElementById('deleteSelectedBlurBtn')?.addEventListener('click', function() {
+  document.getElementById('deleteSelectedBlurBtn')?.addEventListener('click', function () {
     deleteSelectedBlur();
   });
 
   // Draggable Face Cam & Auto Zoom With Webcam controls
-  document.getElementById('enableDemoWebcamBtn')?.addEventListener('click', function() {
+  document.getElementById('enableDemoWebcamBtn')?.addEventListener('click', function () {
     demoWebcamEnabled = !demoWebcamEnabled;
     if (demoWebcamEnabled) {
       settings.showWebcam = true;
@@ -3336,7 +3364,7 @@ function setupEventListeners() {
     requestPreviewRedraw();
   });
 
-  document.getElementById('showWebcamToggle')?.addEventListener('change', function() {
+  document.getElementById('showWebcamToggle')?.addEventListener('change', function () {
     settings.showWebcam = this.checked;
     if (this.checked && !cameraVideoLoaded && !demoWebcamEnabled) {
       demoWebcamEnabled = true;
@@ -3353,7 +3381,7 @@ function setupEventListeners() {
   } catch (e) { /* storage unavailable */ }
   settings.webcamZoomMode = 'float';
 
-  document.getElementById('webcamZoomModeSelect')?.addEventListener('change', function() {
+  document.getElementById('webcamZoomModeSelect')?.addEventListener('change', function () {
     saveState();
     settings.webcamZoomMode = (this.value === 'floating') ? 'float' : this.value;
     _webcamDodgeX = null;
@@ -3369,7 +3397,7 @@ function setupEventListeners() {
     requestPreviewRedraw();
   });
 
-  document.getElementById('webcamPositionSelect')?.addEventListener('change', function() {
+  document.getElementById('webcamPositionSelect')?.addEventListener('change', function () {
     settings.webcamPosition = this.value;
     if (this.value !== 'custom') {
       settings.webcamCustomX = null;
@@ -3385,7 +3413,7 @@ function setupEventListeners() {
   });
 
   document.querySelectorAll('.webcam-pos-quick-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function () {
       const pos = this.dataset.pos || 'bottom-right';
       saveState();
       settings.webcamPosition = pos;
@@ -3404,7 +3432,7 @@ function setupEventListeners() {
   });
 
   ['resetWebcamCornerBtn', 'resetWebcamPosBtn'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', function() {
+    document.getElementById(id)?.addEventListener('click', function () {
       saveState();
       settings.webcamPosition = 'bottom-right';
       settings.webcamCustomX = null;
@@ -3417,7 +3445,7 @@ function setupEventListeners() {
     });
   });
 
-  document.getElementById('webcamSizeSelect')?.addEventListener('change', function() {
+  document.getElementById('webcamSizeSelect')?.addEventListener('change', function () {
     saveState();
     settings.webcamSize = this.value;
     _webcamDodgeX = null;
@@ -3430,7 +3458,7 @@ function setupEventListeners() {
     webcamScaleSliderEl.addEventListener('mousedown', () => {
       saveState();
     });
-    webcamScaleSliderEl.addEventListener('input', function() {
+    webcamScaleSliderEl.addEventListener('input', function () {
       const pct = parseInt(this.value, 10) || 100;
       settings.webcamScale = pct / 100;
       const label = document.getElementById('webcamScaleValue');
@@ -3441,12 +3469,12 @@ function setupEventListeners() {
     });
   }
 
-  document.getElementById('webcamShapeSelect')?.addEventListener('change', function() {
+  document.getElementById('webcamShapeSelect')?.addEventListener('change', function () {
     settings.webcamShape = this.value;
     requestPreviewRedraw();
   });
 
-  document.getElementById('webcamFlipToggle')?.addEventListener('change', function() {
+  document.getElementById('webcamFlipToggle')?.addEventListener('change', function () {
     settings.webcamFlip = this.checked;
     requestPreviewRedraw();
   });
@@ -3458,17 +3486,17 @@ function setupEventListeners() {
   const applyZoomToggle = document.getElementById('applyZoomToggle');
   if (applyZoomToggle) {
     applyZoomToggle.classList.toggle('active', settings.applyZoom !== false);
-    applyZoomToggle.addEventListener('click', function() {
+    applyZoomToggle.addEventListener('click', function () {
       this.classList.toggle('active');
       settings.applyZoom = this.classList.contains('active');
       debugLog('[Editor] Apply auto zoom:', settings.applyZoom ? 'ON' : 'OFF');
-      
+
       const layer = document.getElementById('zoomSegmentsLayer');
       if (layer) {
         layer.style.opacity = settings.applyZoom ? '1' : '0.25';
         layer.style.pointerEvents = settings.applyZoom ? 'auto' : 'none';
       }
-      
+
       if (settings.applyZoom) {
         if (!zoomSegments || zoomSegments.length === 0) {
           analyzeZoom();
@@ -3485,27 +3513,27 @@ function setupEventListeners() {
       requestPreviewRedraw();
     });
   }
-  
+
   // Timeline click to seek
-  timelineTrack.addEventListener('click', function(e) {
+  timelineTrack.addEventListener('click', function (e) {
     const dur = getVideoDuration();
     if (!videoLoaded || dur <= 0) return;
     if (isDragging) return;
     if (e.target.closest('.trim-handle')) return;
     if (e.target.closest('.zoom-segment-pill') || e.target.closest('.zoom-segment')) return;
     if (e.target.closest('.blur-segment-pill')) return;
-    
+
     const rect = this.getBoundingClientRect();
     const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const targetTime = percent * dur;
     video.currentTime = Math.max(0, Math.min(dur, targetTime));
     requestPreviewRedraw();
   });
-  
+
   // Video events
-  video.addEventListener('timeupdate', function() {
+  video.addEventListener('timeupdate', function () {
     updateTimeline();
-    
+
     // Check if we've reached the end of the trimmed section
     const dur = getVideoDuration();
     if (isPlaying && dur > 0) {
@@ -3519,36 +3547,36 @@ function setupEventListeners() {
     }
     syncCameraVideoWithMain();
   });
-  video.addEventListener('play', function() {
+  video.addEventListener('play', function () {
     syncCameraVideoWithMain();
   });
-  video.addEventListener('pause', function() {
+  video.addEventListener('pause', function () {
     syncCameraVideoWithMain();
   });
-  video.addEventListener('ratechange', function() {
+  video.addEventListener('ratechange', function () {
     syncCameraVideoWithMain();
   });
-  video.addEventListener('seeking', function() {
+  video.addEventListener('seeking', function () {
     syncCameraVideoWithMain();
   });
-  video.addEventListener('seeked', function() {
+  video.addEventListener('seeked', function () {
     syncCameraVideoWithMain();
     requestPreviewRedraw();
   });
-  video.addEventListener('canplay', function() {
+  video.addEventListener('canplay', function () {
     requestPreviewRedraw();
   });
-  video.addEventListener('loadeddata', function() {
+  video.addEventListener('loadeddata', function () {
     requestPreviewRedraw();
   });
-  video.addEventListener('ended', function() {
+  video.addEventListener('ended', function () {
     isPlaying = false;
     syncCameraVideoWithMain();
     updatePlayButton();
   });
-  
+
   // Keyboard shortcuts
-  document.addEventListener('keydown', function(e) {
+  document.addEventListener('keydown', function (e) {
     if (e.target.matches('input, textarea, select')) return;
 
     const reviewModalEl = document.getElementById('reviewModal');
@@ -3577,6 +3605,7 @@ function setupEventListeners() {
       }
       if (isExportOpen && !isExportProcessing) {
         exportModalEl.classList.add('hidden');
+        exportModalEl.style.display = 'none';
         return;
       }
       const mediaDrawerEl = document.getElementById('mediaDrawer');
@@ -3591,8 +3620,8 @@ function setupEventListeners() {
     }
 
     const dur = getVideoDuration();
-    
-    switch(e.code) {
+
+    switch (e.code) {
       case 'Space':
         e.preventDefault();
         togglePlay();
@@ -3711,28 +3740,28 @@ function setupEventListeners() {
         break;
     }
   });
-  
+
   // Click outside to deselect
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', function (e) {
     if (e.target.closest('.zoom-segment-pill') ||
-        e.target.closest('.zoom-segment') ||
-        e.target.closest('.zoom-segments-layer') ||
-        e.target.closest('.zoom-handle') ||
-        e.target.closest('.blur-segment-pill') ||
-        e.target.closest('.blur-segments-layer') ||
-        e.target.closest('.blur-handle') ||
-        e.target.closest('#selectedZoomInspector') ||
-        e.target.closest('#selectedBlurInspector') ||
-        e.target.closest('.sidebar') ||
-        e.target.closest('.preview-panel') ||
-        e.target.closest('#previewCanvas') ||
-        e.target.closest('.timeline-toolbar') ||
-        e.target.closest('.timeline-header') ||
-        e.target.closest('.timeline-container-inner') ||
-        e.target.closest('.modal') ||
-        e.target.closest('.toolbar-btn') ||
-        e.target.closest('.action-pill-btn') ||
-        e.target.closest('.btn-preset-spot')) {
+      e.target.closest('.zoom-segment') ||
+      e.target.closest('.zoom-segments-layer') ||
+      e.target.closest('.zoom-handle') ||
+      e.target.closest('.blur-segment-pill') ||
+      e.target.closest('.blur-segments-layer') ||
+      e.target.closest('.blur-handle') ||
+      e.target.closest('#selectedZoomInspector') ||
+      e.target.closest('#selectedBlurInspector') ||
+      e.target.closest('.sidebar') ||
+      e.target.closest('.preview-panel') ||
+      e.target.closest('#previewCanvas') ||
+      e.target.closest('.timeline-toolbar') ||
+      e.target.closest('.timeline-header') ||
+      e.target.closest('.timeline-container-inner') ||
+      e.target.closest('.modal') ||
+      e.target.closest('.toolbar-btn') ||
+      e.target.closest('.action-pill-btn') ||
+      e.target.closest('.btn-preset-spot')) {
       return;
     }
     deselectAllBlurs();
@@ -3747,7 +3776,7 @@ function setupDragInteractions() {
     e.stopPropagation();
     startDrag(e, 'trim-start');
   });
-  
+
   trimEndScissor?.addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -3784,15 +3813,15 @@ function setupDragInteractions() {
     e.stopPropagation();
     splitAtPlayhead();
   });
-  
+
   // Global mouse events for dragging
   document.addEventListener('mousemove', handleDrag);
   document.addEventListener('mouseup', endDrag);
-  
+
   // Playhead drag - use timeline container for new widget structure
   const timelineContainerInner = document.querySelector('.timeline-container-inner');
   const clickTarget = timelineContainerInner || timelineTrack;
-  
+
   clickTarget?.addEventListener('mousedown', (e) => {
     // Don't start drag if clicking on trim handles, zoom pills, blur pills, click markers, or action buttons
     if (e.target.closest('.trim-handle')) return;
@@ -3801,13 +3830,13 @@ function setupDragInteractions() {
     if (e.target.closest('.timeline-click-marker')) return;
     if (e.target.closest('button')) return;
     if (!videoLoaded) return;
-    
+
     const rect = timelineContainerInner ? timelineContainerInner.getBoundingClientRect() : timelineTrack.getBoundingClientRect();
     const percent = (e.clientX - rect.left) / rect.width;
     const clampedPercent = Math.max(0, Math.min(1, percent));
     const dur = getVideoDuration();
     const targetTime = clampedPercent * dur;
-    
+
     // Immediate playhead and readout visual feedback
     if (playheadElement) {
       playheadElement.style.left = (clampedPercent * 100) + '%';
@@ -3819,7 +3848,7 @@ function setupDragInteractions() {
     if (leftTimeBadge) {
       leftTimeBadge.textContent = formatTime(targetTime);
     }
-    
+
     if (video.fastSeek) {
       video.fastSeek(Math.max(0, Math.min(dur, targetTime)));
     } else {
@@ -3827,7 +3856,7 @@ function setupDragInteractions() {
     }
     _forceRedraw = true;
     requestPreviewRedraw();
-    
+
     startDrag(e, 'playhead');
   });
 
@@ -3846,7 +3875,7 @@ function startDrag(e, type, segmentIndex = -1) {
   dragSegmentIndex = segmentIndex;
   dragInitialPlayheadMs = (video && isFinite(video.currentTime)) ? (video.currentTime * 1000) : 0;
   _hasDraggedTimeline = false;
-  
+
   if (type === 'segment' || type === 'handle-left' || type === 'handle-right' || type === 'blur-segment' || type === 'blur-handle-left' || type === 'blur-handle-right' || type === 'trim-start' || type === 'trim-end') {
     _preDragState = {
       zoomSegments: JSON.parse(JSON.stringify(zoomSegments)),
@@ -3856,7 +3885,7 @@ function startDrag(e, type, segmentIndex = -1) {
   } else {
     _preDragState = null;
   }
-  
+
   if (type === 'trim-start') {
     dragStartValue = trimHandles.start;
     trimStartScissor?.classList.add('active');
@@ -3876,7 +3905,7 @@ function startDrag(e, type, segmentIndex = -1) {
   } else if (type === 'blur-handle-right' && segmentIndex >= 0 && segmentIndex < blurRegions.length) {
     dragStartValue = blurRegions[segmentIndex].endTime;
   }
-  
+
   document.body.classList.add('is-dragging-timeline');
   document.body.style.cursor = 'ew-resize';
   document.body.style.userSelect = 'none';
@@ -3884,23 +3913,23 @@ function startDrag(e, type, segmentIndex = -1) {
 
 function handleDrag(e) {
   if (!isDragging || !videoLoaded) return;
-  
+
   const timelineContainer = document.querySelector('.timeline-container-inner');
   const containerRect = timelineContainer ? timelineContainer.getBoundingClientRect() : null;
   const trackRect = timelineTrack ? timelineTrack.getBoundingClientRect() : null;
   const rect = containerRect || trackRect || document.getElementById('timeline')?.getBoundingClientRect();
   if (!rect || rect.width <= 0) return;
-  
+
   const dur = getVideoDuration();
   if (dur <= 0) return;
-  
+
   const deltaX = e.clientX - dragStartX;
   if (Math.abs(deltaX) > 0) {
     _hasDraggedTimeline = true;
   }
   const percentDelta = deltaX / rect.width;
   const timeDelta = percentDelta * dur * 1000;
-  
+
   if (dragType === 'trim-start') {
     const newStart = Math.max(0, Math.min(trimHandles.end - 0.05, dragStartValue + percentDelta));
     trimHandles.start = newStart;
@@ -3935,7 +3964,7 @@ function handleDrag(e) {
     const percent = (e.clientX - rect.left) / rect.width;
     const clampedPercent = Math.max(0, Math.min(1, percent));
     const targetTime = Math.max(0, Math.min(dur, clampedPercent * dur));
-    
+
     if (playheadElement) {
       playheadElement.style.left = (clampedPercent * 100) + '%';
     }
@@ -3946,7 +3975,7 @@ function handleDrag(e) {
     if (leftTimeBadge) {
       leftTimeBadge.textContent = formatTime(targetTime);
     }
-    
+
     if (!_scrubSeekPending) {
       _scrubSeekPending = true;
       requestAnimationFrame(() => {
@@ -4000,11 +4029,11 @@ function handleDrag(e) {
     const seg = zoomSegments[dragSegmentIndex];
     const duration = Math.max(200, seg.endTime - seg.startTime);
     const newStart = Math.max(0, Math.min(dur * 1000 - duration, dragStartValue + timeDelta));
-    
+
     seg.startTime = Math.round(newStart);
     seg.endTime = Math.round(newStart + duration);
     if (analyzer && typeof analyzer.invalidatePathCache === 'function') analyzer.invalidatePathCache();
-    
+
     // Update DOM pill directly for 120fps smoothness without recreating elements
     const pill = document.querySelector(`.zoom-segment-pill[data-index="${dragSegmentIndex}"]`);
     if (pill) {
@@ -4013,7 +4042,7 @@ function handleDrag(e) {
       pill.style.left = `${leftPct}%`;
       pill.style.width = `${widthPct}%`;
     }
-    
+
     // Scrub preview to new start point
     if (!_scrubSeekPending) {
       _scrubSeekPending = true;
@@ -4036,11 +4065,11 @@ function handleDrag(e) {
     const seg = zoomSegments[dragSegmentIndex];
     const minDuration = 250; // 0.25s minimum
     const newStart = Math.max(0, Math.min(seg.endTime - minDuration, dragStartValue + timeDelta));
-    
+
     seg.startTime = Math.round(newStart);
     const duration = seg.endTime - seg.startTime;
     if (analyzer && typeof analyzer.invalidatePathCache === 'function') analyzer.invalidatePathCache();
-    
+
     // Update DOM pill directly
     const pill = document.querySelector(`.zoom-segment-pill[data-index="${dragSegmentIndex}"]`);
     if (pill) {
@@ -4060,7 +4089,7 @@ function handleDrag(e) {
         label.innerHTML = widthPct > 5 ? `${iconSpan} ${levelSpan}` : `${iconSpan}`;
       }
     }
-    
+
     // Scrub preview to new start point
     if (!_scrubSeekPending) {
       _scrubSeekPending = true;
@@ -4073,7 +4102,7 @@ function handleDrag(e) {
         requestPreviewRedraw();
       });
     }
-    
+
     const timeRangeEl = document.getElementById('inspectorTimeRange');
     if (timeRangeEl) {
       const durSec = (duration / 1000).toFixed(1);
@@ -4083,11 +4112,11 @@ function handleDrag(e) {
     const seg = zoomSegments[dragSegmentIndex];
     const minDuration = 250;
     const newEnd = Math.max(seg.startTime + minDuration, Math.min(dur * 1000, dragStartValue + timeDelta));
-    
+
     seg.endTime = Math.round(newEnd);
     const duration = seg.endTime - seg.startTime;
     if (analyzer && typeof analyzer.invalidatePathCache === 'function') analyzer.invalidatePathCache();
-    
+
     // Update DOM pill directly
     const pill = document.querySelector(`.zoom-segment-pill[data-index="${dragSegmentIndex}"]`);
     if (pill) {
@@ -4105,7 +4134,7 @@ function handleDrag(e) {
         label.innerHTML = widthPct > 5 ? `${iconSpan} ${levelSpan}` : `${iconSpan}`;
       }
     }
-    
+
     // Scrub preview to new end point
     if (!_scrubSeekPending) {
       _scrubSeekPending = true;
@@ -4118,7 +4147,7 @@ function handleDrag(e) {
         requestPreviewRedraw();
       });
     }
-    
+
     const timeRangeEl = document.getElementById('inspectorTimeRange');
     if (timeRangeEl) {
       const durSec = (duration / 1000).toFixed(1);
@@ -4149,17 +4178,17 @@ function endDrag() {
     updateBlurUI();
     requestPreviewRedraw();
   }
-  
+
   _preDragState = null;
   _hasDraggedTimeline = false;
   isDragging = false;
   dragType = null;
   dragSegmentIndex = -1;
-  
+
   document.body.classList.remove('is-dragging-timeline');
   trimStartScissor?.classList.remove('active');
   trimEndScissor?.classList.remove('active');
-  
+
   document.body.style.cursor = '';
   document.body.style.userSelect = '';
 }
@@ -4167,10 +4196,10 @@ function endDrag() {
 function updateTrimUI() {
   const dur = getVideoDuration();
   if (!video || dur <= 0) return;
-  
+
   const startPercent = trimHandles.start * 100;
   const endPercent = (1 - trimHandles.end) * 100;
-  
+
   // Update trimmed areas
   if (trimmedLeft) {
     trimmedLeft.style.width = startPercent + '%';
@@ -4178,7 +4207,7 @@ function updateTrimUI() {
   if (trimmedRight) {
     trimmedRight.style.width = endPercent + '%';
   }
-  
+
   // Update trim handle positions
   if (trimStartScissor) {
     trimStartScissor.style.left = startPercent + '%';
@@ -4187,7 +4216,7 @@ function updateTrimUI() {
     trimEndScissor.style.right = (100 - trimHandles.end * 100) + '%';
     trimEndScissor.style.left = 'auto';
   }
-  
+
   // Update label visibility
   if (leftLabel) {
     if (startPercent < 2) {
@@ -4196,7 +4225,7 @@ function updateTrimUI() {
       leftLabel.style.display = 'none';
     }
   }
-  
+
   // Update time display with formatted range and net trimmed duration
   if (timeDisplay) {
     const startTime = trimHandles.start * dur;
@@ -4206,7 +4235,7 @@ function updateTrimUI() {
     const netDuration = (endTime - startTime).toFixed(1);
     timeDisplay.textContent = `${startFormatted} - ${endFormatted} (${netDuration}s)`;
   }
-  
+
   // Legacy support for old overlay elements
   if (trimOverlayStart) {
     trimOverlayStart.style.width = startPercent + '%';
@@ -4285,7 +4314,7 @@ function saveState() {
     webcamState: captureWebcamUndoState()
   });
   redoStack = [];
-  
+
   if (undoStack.length > 50) {
     undoStack.shift();
   }
@@ -4294,14 +4323,14 @@ function saveState() {
 
 function undo() {
   if (undoStack.length === 0) return;
-  
+
   redoStack.push({
     zoomSegments: JSON.parse(JSON.stringify(zoomSegments)),
     blurRegions: JSON.parse(JSON.stringify(blurRegions)),
     trimHandles: { ...trimHandles },
     webcamState: captureWebcamUndoState()
   });
-  
+
   const state = undoStack.pop();
   zoomSegments = state.zoomSegments;
   blurRegions = state.blurRegions || [];
@@ -4312,7 +4341,7 @@ function undo() {
   if (analyzer && typeof analyzer.invalidatePathCache === 'function') {
     analyzer.invalidatePathCache();
   }
-  
+
   if (selectedZoomIndex >= zoomSegments.length || selectedZoomIndex < 0) {
     deselectAllZooms();
   } else {
@@ -4332,14 +4361,14 @@ function undo() {
 
 function redo() {
   if (redoStack.length === 0) return;
-  
+
   undoStack.push({
     zoomSegments: JSON.parse(JSON.stringify(zoomSegments)),
     blurRegions: JSON.parse(JSON.stringify(blurRegions)),
     trimHandles: { ...trimHandles },
     webcamState: captureWebcamUndoState()
   });
-  
+
   const state = redoStack.pop();
   zoomSegments = state.zoomSegments;
   blurRegions = state.blurRegions || [];
@@ -4350,7 +4379,7 @@ function redo() {
   if (analyzer && typeof analyzer.invalidatePathCache === 'function') {
     analyzer.invalidatePathCache();
   }
-  
+
   if (selectedZoomIndex >= zoomSegments.length || selectedZoomIndex < 0) {
     deselectAllZooms();
   } else {
@@ -4415,7 +4444,7 @@ async function startNewRecording() {
         return;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
   window.location.href = chrome.runtime.getURL('record.html');
 }
 
@@ -4423,7 +4452,7 @@ function loadVideoFromFile() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'video/*';
-  input.onchange = async function(e) {
+  input.onchange = async function (e) {
     const file = e.target.files[0];
     if (file) {
       await loadVideoFileDirectly(file);
@@ -4434,7 +4463,7 @@ function loadVideoFromFile() {
 
 async function loadVideoFileDirectly(file) {
   if (!file) return;
-  
+
   // Clean up previous video and processor
   if (video && video.src) {
     const oldUrl = video.src;
@@ -4448,7 +4477,7 @@ async function loadVideoFileDirectly(file) {
 
   // Clean up any previous session's Face Cam stream when importing an external video file
   if (cameraVideo) {
-    try { cameraVideo.pause(); } catch (_) {}
+    try { cameraVideo.pause(); } catch (_) { }
     if (cameraVideo._objectUrl) {
       URL.revokeObjectURL(cameraVideo._objectUrl);
     }
@@ -4459,12 +4488,12 @@ async function loadVideoFileDirectly(file) {
   cameraVideoLoaded = false;
   cameraOverlayEnabled = false;
   updateFaceCamUI();
-  
+
   if (processor) {
     processor.cancel();
   }
   processor = new VideoProcessor();
-  
+
   const url = URL.createObjectURL(file);
   cursorData = [];
   if (analyzer) {
@@ -4585,7 +4614,7 @@ function showBlackScreenNotice() {
             `The captured video stream was blank. Try re-recording and selecting a specific <strong>${bName} Tab</strong> or <strong>Entire Screen</strong> in ${bName}’s share dialog${isLinux ? ' (on Linux Wayland, ensure PipeWire / xdg-desktop-portal is enabled)' : ''}.`;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
     notice.classList.remove('hidden');
     const closeBtn = document.getElementById('closeBlackScreenNoticeBtn');
     if (closeBtn) {
@@ -4599,16 +4628,16 @@ async function loadVideo(url) {
     // Clear any previous error handlers
     video.onerror = null;
     video.onloadeddata = null;
-    
+
     // Set up error handler FIRST
-    video.onerror = function(event) {
+    video.onerror = function (event) {
       console.error('[Editor] Video error event:', event);
       console.error('[Editor] Video error details:', {
         type: event.type,
         target: event.target,
         error: video.error
       });
-      
+
       if (video.error) {
         const errorMsg = `Video load error: ${video.error.code} - ${video.error.message}`;
         console.error('[Editor]', errorMsg);
@@ -4617,20 +4646,20 @@ async function loadVideo(url) {
         reject(new Error('Video failed to load (unknown error)'));
       }
     };
-    
+
     video.src = url;
     // Don't mute - allow audio playback in editor
     video.muted = false;
     video.playsInline = true;
     video.setAttribute('playsinline', 'true');
     video.preload = 'auto';
-    
-    video.onloadeddata = async function() {
+
+    video.onloadeddata = async function () {
       debugLog('[Editor] Video loaded:', video.videoWidth, 'x', video.videoHeight);
       videoLoaded = true;
       videoWidth = video.videoWidth || 1920;
       videoHeight = video.videoHeight || 1080;
-      
+
       // Handle WebM Infinity duration issue
       let duration = video.duration;
       if (videoDuration > 0 && isFinite(videoDuration)) {
@@ -4639,7 +4668,7 @@ async function loadVideo(url) {
       } else if (!isFinite(duration) || duration <= 0) {
         debugLog('[Editor] Finding real duration via seek...');
         video.currentTime = Number.MAX_SAFE_INTEGER;
-        
+
         await new Promise((res) => {
           video.onseeked = () => {
             duration = video.duration;
@@ -4650,7 +4679,7 @@ async function loadVideo(url) {
             res();
           }, 1500);
         });
-        
+
         // Reset to start
         video.currentTime = 0;
         await new Promise(res => {
@@ -4658,17 +4687,17 @@ async function loadVideo(url) {
           setTimeout(res, 300);
         });
       }
-      
+
       if (isFinite(duration) && duration > 0) {
         videoDuration = duration;
       }
       debugLog('[Editor] Video duration established:', videoDuration);
-      
+
       // 1. Unhide videoFrame and hide loading/empty states FIRST so canvas has real layout dimensions!
       loadingOverlay.classList.add('hidden');
       emptyState.classList.add('hidden');
       videoFrame.classList.remove('hidden');
-      
+
       // Setup UI (updateFrameSize correctly sizes previewCanvas and initializes ctx)
       updateBackground();
       updateFrameSize();
@@ -4682,17 +4711,17 @@ async function loadVideo(url) {
       updateTrimUI();
       updateTopbarProjectInfo(currentVideoTitle, videoDuration);
       updateUndoRedoButtons();
-      
+
       // Ensure the browser decodes and paints the first video frame
       // Automatically skip any initial encoder pre-roll black frames
       const dur = getVideoDuration() || videoDuration || video.duration || 0;
       let firstVisibleTime = 0.05;
-      
+
       if (dur > 0.1) {
         // Try candidate timestamps: 0.05s, 0.12s, 0.25s, 0.5s, 1.0s
         const candidates = [0.05, 0.12, 0.25, 0.5, 1.0].filter(t => t < dur * 0.95);
         let foundContent = false;
-        
+
         for (const t of candidates) {
           await seekVideoTo(video, t);
           renderPreviewFrame();
@@ -4703,7 +4732,7 @@ async function loadVideo(url) {
             break;
           }
         }
-        
+
         // If all candidates in the first second were black, test the middle of the recording
         if (!foundContent && dur > 1.0) {
           await seekVideoTo(video, dur / 2);
@@ -4721,26 +4750,26 @@ async function loadVideo(url) {
         await seekVideoTo(video, 0.001);
         renderPreviewFrame();
       }
-      
+
       // Position video at the first visible frame and await frame buffer commit
       await seekVideoTo(video, firstVisibleTime);
-      
+
       // Initial timeline update
       updateTimeline();
-      
+
       // Start render loop and force immediate first draw
       _forceRedraw = true;
       _hasDrawnValidFirstFrame = false;
       startRenderLoop();
       renderPreviewFrame();
-      
+
       resolve();
     };
-    
+
     // Add timeout to detect if video never loads
     let loadTimeout;
     const originalOnLoadedData = video.onloadeddata;
-    video.onloadeddata = async function() {
+    video.onloadeddata = async function () {
       if (loadTimeout) {
         clearTimeout(loadTimeout);
         loadTimeout = null;
@@ -4749,14 +4778,14 @@ async function loadVideo(url) {
         await originalOnLoadedData();
       }
     };
-    
+
     loadTimeout = setTimeout(() => {
       if (!videoLoaded) {
         console.error('[Editor] Video load timeout after 30 seconds');
         reject(new Error('Video load timeout - the video file may be corrupted or invalid. Please try recording again.'));
       }
     }, 30000); // 30 second timeout
-    
+
     video.load();
     if (video.readyState >= 2) {
       if (loadTimeout) {
@@ -4771,10 +4800,10 @@ async function loadVideo(url) {
 function updateTimelineRuler() {
   const dur = getVideoDuration();
   if (!dur || !isFinite(dur)) return;
-  
+
   const ticks = timelineRuler.querySelectorAll('span');
   const numTicks = ticks.length;
-  
+
   ticks.forEach((tick, i) => {
     const time = (i / (numTicks - 1)) * dur;
     tick.textContent = formatTimeWithSeconds(time);
@@ -4784,7 +4813,7 @@ function updateTimelineRuler() {
 function generateTimeMarkers() {
   const dur = getVideoDuration();
   if (!timeMarkers || !video || !dur || !isFinite(dur)) return;
-  
+
   timeMarkers.innerHTML = '';
   // OpenScreen-style dynamic high-density tick ruler across full width
   let markerCount = 8;
@@ -4799,7 +4828,7 @@ function generateTimeMarkers() {
   } else {
     markerCount = 12;
   }
-  
+
   for (let i = 0; i <= markerCount; i++) {
     const marker = document.createElement('div');
     marker.className = 'time-marker';
@@ -4813,34 +4842,34 @@ function drawTimelineAudioWaveform() {
   const canvas = document.getElementById('audioWaveformCanvas');
   const dur = getVideoDuration();
   if (!canvas || !video || !dur || !isFinite(dur) || dur <= 0) return;
-  
+
   const rect = canvas.getBoundingClientRect();
   const w = rect.width;
   const h = rect.height;
   if (w <= 0 || h <= 0) return;
-  
+
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(h * dpr);
-  
+
   const ctx = canvas.getContext('2d');
   ctx.save();
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, w, h);
-  
+
   // Create gradient matching OpenScreen audio track look
   const grad = ctx.createLinearGradient(0, 0, 0, h);
   grad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
   grad.addColorStop(0.5, 'rgba(5, 150, 105, 0.60)');
   grad.addColorStop(1, 'rgba(4, 120, 87, 0.40)');
-  
+
   // Generate deterministic, natural voice waveform with speech pauses
   const step = 4;
   const points = Math.ceil(w / step);
-  
+
   ctx.beginPath();
   ctx.moveTo(0, h);
-  
+
   for (let i = 0; i <= points; i++) {
     const x = i * step;
     const norm = i / points;
@@ -4852,12 +4881,12 @@ function drawTimelineAudioWaveform() {
     const y = h - (amp * (h - 3));
     ctx.lineTo(x, y);
   }
-  
+
   ctx.lineTo(w, h);
   ctx.closePath();
   ctx.fillStyle = grad;
   ctx.fill();
-  
+
   // Stroke top edge of waveform for crisp NLE outline
   ctx.lineWidth = 1;
   ctx.strokeStyle = 'rgba(52, 211, 153, 0.85)';
@@ -4905,7 +4934,7 @@ function updateBackground() {
     videoBackground.style.background = bg;
     videoBackground.style.display = 'block';
   }
-  
+
   // Recalculate video window size when background changes (padding changes)
   if (videoLoaded) {
     updateFrameSize();
@@ -4923,18 +4952,18 @@ function getEffectiveBrowserUIHeight(h = videoHeight) {
   if (Number.isFinite(settings.browserTopBarHeight) && settings.browserTopBarHeight > 0 && displaySurface === 'window') {
     return Math.min(Math.round(h * 0.15), Math.round(settings.browserTopBarHeight));
   }
-  
+
   const hasChromeInteraction = Array.isArray(cursorData) && (
     cursorData.length >= 2 ||
     cursorData.some(d => d && (d.type === 'click' || d.type === 'doubleclick' || d.type === 'mousedown' || d.type === 'scroll' || d.type === 'wheel' || (d.timestamp && d.timestamp > 0)))
   );
   const sampleWithWm = (hasChromeInteraction && cursorData)
     ? (cursorData.find(d => d && d.timestamp > 0 && d.windowMetrics && d.windowMetrics.topBarHeight > 0 && d.windowMetrics.screenHeight > 0) ||
-       cursorData.find(d => d && d.windowMetrics && d.windowMetrics.topBarHeight > 0 && d.windowMetrics.screenHeight > 0) ||
-       cursorData.find(d => d && d.windowMetrics))
+      cursorData.find(d => d && d.windowMetrics && d.windowMetrics.topBarHeight > 0 && d.windowMetrics.screenHeight > 0) ||
+      cursorData.find(d => d && d.windowMetrics))
     : null;
   const wm = sampleWithWm ? sampleWithWm.windowMetrics : null;
-  
+
   if (wm && wm.innerHeight && wm.outerHeight) {
     const videoAspect = (videoWidth > 0 && videoHeight > 0) ? (videoWidth / videoHeight) : (wm.outerWidth / wm.outerHeight);
     const winAspect = wm.outerWidth / wm.outerHeight;
@@ -4955,12 +4984,12 @@ function getEffectiveBrowserUIHeight(h = videoHeight) {
 
     const tabAspect = wm.innerWidth / wm.innerHeight;
     const screenAspect = (wm.screenWidth && wm.screenHeight) ? (wm.screenWidth / wm.screenHeight) : (16 / 9);
-    
+
     // When displaySurface is unknown, if aspect matches Tab or Screen, do not crop
     if (Math.abs(videoAspect - tabAspect) < 0.035 || Math.abs(videoAspect - screenAspect) < 0.02) {
       return 0;
     }
-    
+
     if (Math.abs(videoAspect - winAspect) < 0.035) {
       const topBar = wm.topBarHeight !== undefined ? wm.topBarHeight : Math.max(0, Math.min(120, wm.outerHeight - wm.innerHeight));
       if (topBar > 0) {
@@ -4968,18 +4997,18 @@ function getEffectiveBrowserUIHeight(h = videoHeight) {
       }
     }
   }
-  
+
   // Default: native non-Chrome windows, monitor recordings, or unknown desktop recordings should NEVER have their top clipped
   return 0;
 }
 
 function updateFrameSize() {
   if (!videoLoaded) return;
-  
+
   const container = document.querySelector('.preview-area');
   const maxW = container.clientWidth - 48;
   const maxH = container.clientHeight - 48;
-  
+
   // Calculate the target aspect ratio based on selection
   let targetRatio;
   if (settings.aspectRatio === 'native') {
@@ -4988,7 +5017,7 @@ function updateFrameSize() {
     const [w, h] = settings.aspectRatio.split(':').map(Number);
     targetRatio = w / h;
   }
-  
+
   // Calculate frame dimensions (the outer container with background)
   let frameW, frameH;
   if (targetRatio >= 1) {
@@ -4998,10 +5027,10 @@ function updateFrameSize() {
     frameH = Math.min(maxH, maxW / targetRatio);
     frameW = frameH * targetRatio;
   }
-  
+
   videoFrame.style.width = frameW + 'px';
   videoFrame.style.height = frameH + 'px';
-  
+
   // Calculate source video dimensions (possibly cropped for browser UI)
   let sourceHeight = videoHeight;
   const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
@@ -5009,13 +5038,13 @@ function updateFrameSize() {
     sourceHeight = videoHeight - browserUIHeight;
   }
   const sourceAspect = videoWidth / sourceHeight;
-  
+
   // Calculate video window size to fit within frame (with padding)
   // The video window should be centered and maintain the source video's aspect ratio
   const padding = settings.background === 'hidden' ? 0 : (settings.padding ?? 28);
   const availableW = Math.max(10, frameW - (padding * 2));
   const availableH = Math.max(10, frameH - (padding * 2));
-  
+
   const headerH = (settings.showMacWindowHeader !== false) ? 32 : 0;
   const availContentH = Math.max(10, availableH - headerH);
 
@@ -5029,18 +5058,18 @@ function updateFrameSize() {
     contentH = availContentH;
     contentW = availContentH * sourceAspect;
   }
-  
+
   const windowW = Math.round(contentW);
   const windowH = Math.round(contentH + headerH);
-  
+
   // Apply video window dimensions
   videoWindow.style.width = windowW + 'px';
   videoWindow.style.height = windowH + 'px';
   videoWindow.style.borderRadius = (settings.background === 'hidden' ? 0 : (settings.borderRadius ?? 14)) + 'px';
-  
+
   // Ensure video window is centered (CSS transform might not be applied yet)
   videoWindow.style.transform = 'translate(-50%, -50%)';
-  
+
   // Canvas should match source video dimensions (we'll draw to it at source resolution)
   if (previewCanvas.width !== videoWidth || previewCanvas.height !== sourceHeight) {
     previewCanvas.width = videoWidth;
@@ -5054,22 +5083,22 @@ function updateFrameSize() {
 
 function analyzeZoom() {
   debugLog('[Editor] analyzeZoom called');
-  
+
   if (!analyzer || !settings.applyZoom) {
     zoomSegments = [];
     updateZoomUI();
     return;
   }
-  
+
   const clicks = cursorData.filter(d => d.type === 'click' || d.type === 'doubleclick');
   debugLog('[Editor] Clicks to analyze:', clicks.length);
-  
+
   const currentDur = getVideoDuration() || videoDuration || (video && isFinite(video.duration) ? video.duration : 0) || 0;
   analyzer.ZOOM_LEVEL = zoomDepths[settings.zoomDepth];
   const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
   zoomSegments = analyzer.analyzeClicks(cursorData, videoWidth, videoHeight, displaySurface, currentDur, browserUIHeight);
   debugLog('[Editor] Found', zoomSegments.length, 'zoom segments across duration:', currentDur);
-  
+
   updateZoomUI();
 }
 
@@ -5090,7 +5119,7 @@ function updateZoomUI() {
   if (timelineBadge) {
     timelineBadge.textContent = badgeText;
   }
-  
+
   const zoomCountEl = document.getElementById('zoomCount');
   if (zoomCountEl) zoomCountEl.textContent = zoomSegments.length;
   updateZoomList();
@@ -5106,21 +5135,21 @@ function openQuickZoomPopover(segIndex, anchorEl, clientX, clientY) {
   if (segIndex < 0 || segIndex >= zoomSegments.length) return;
   activeQuickZoomSegIndex = segIndex;
   closeTimelineContextMenu();
-  
+
   const popover = document.getElementById('quickZoomPopover');
   if (!popover) return;
-  
+
   const seg = zoomSegments[segIndex];
   const rawLevel = (seg.zoomLevel || zoomDepths[settings.zoomDepth] || 1.75);
   const level = Number(rawLevel.toFixed(2));
-  
+
   const numInput = document.getElementById('quickZoomNumberInput');
   const slider = document.getElementById('quickZoomSlider');
   const toggleBtn = document.getElementById('quickZoomToggleModeBtn');
-  
+
   if (numInput) numInput.value = level.toFixed(2);
   if (slider) slider.value = Math.max(1.10, Math.min(3.00, level)).toFixed(2);
-  
+
   if (toggleBtn) {
     const isFixed = seg.mode === 'fixed';
     toggleBtn.innerHTML = isFixed
@@ -5129,22 +5158,22 @@ function openQuickZoomPopover(segIndex, anchorEl, clientX, clientY) {
     toggleBtn.style.color = isFixed ? '#d8b4fe' : '#a5b4fc';
     toggleBtn.style.borderColor = isFixed ? 'rgba(168, 85, 247, 0.4)' : 'rgba(99, 102, 241, 0.4)';
   }
-  
+
   // Highlight active preset chip if matching
   document.querySelectorAll('.quick-preset-btn').forEach(btn => {
     const v = parseFloat(btn.dataset.val);
     const isMatch = Math.abs(v - level) < 0.03;
     btn.classList.toggle('active', isMatch);
   });
-  
+
   popover.style.display = 'block';
-  
+
   // Compute optimal position
   const popW = popover.offsetWidth || 280;
   const popH = popover.offsetHeight || 260;
   let posX = 0;
   let posY = 0;
-  
+
   if (anchorEl && anchorEl.getBoundingClientRect) {
     const rect = anchorEl.getBoundingClientRect();
     posX = rect.left + (rect.width / 2) - (popW / 2);
@@ -5158,14 +5187,14 @@ function openQuickZoomPopover(segIndex, anchorEl, clientX, clientY) {
     posY = clientY - popH - 12;
     if (posY < 10) posY = clientY + 12;
   }
-  
+
   // Keep safely inside viewport
   posX = Math.max(12, Math.min(window.innerWidth - popW - 12, posX));
   posY = Math.max(12, Math.min(window.innerHeight - popH - 12, posY));
-  
+
   popover.style.left = `${posX}px`;
   popover.style.top = `${posY}px`;
-  
+
   // Focus and select number input
   if (numInput) {
     setTimeout(() => {
@@ -5173,7 +5202,7 @@ function openQuickZoomPopover(segIndex, anchorEl, clientX, clientY) {
       numInput.select();
     }, 50);
   }
-  
+
   selectZoom(segIndex);
 }
 window.openQuickZoomPopover = openQuickZoomPopover;
@@ -5189,17 +5218,17 @@ function setSegmentZoomLevel(segIndex, newLevel, shouldSaveState = false) {
   if (segIndex < 0 || segIndex >= zoomSegments.length) return;
   const clamped = Math.max(1.05, Math.min(3.50, parseFloat(newLevel) || 1.75));
   const rounded = parseFloat(clamped.toFixed(2));
-  
+
   if (shouldSaveState) saveState();
-  
+
   const seg = zoomSegments[segIndex];
   seg.zoomLevel = rounded;
-  
+
   // Invalidate any follow camera path cache for this segment
   if (analyzer && analyzer.invalidatePathCache) {
     analyzer.invalidatePathCache();
   }
-  
+
   // Sync quick popover inputs if open
   const numInput = document.getElementById('quickZoomNumberInput');
   const slider = document.getElementById('quickZoomSlider');
@@ -5209,13 +5238,13 @@ function setSegmentZoomLevel(segIndex, newLevel, shouldSaveState = false) {
   if (slider && document.activeElement !== slider) {
     slider.value = Math.max(1.10, Math.min(3.00, rounded)).toFixed(2);
   }
-  
+
   // Highlight active preset chip
   document.querySelectorAll('.quick-preset-btn').forEach(btn => {
     const v = parseFloat(btn.dataset.val);
     btn.classList.toggle('active', Math.abs(v - rounded) < 0.03);
   });
-  
+
   // Sync inspector inputs
   const inspInput = document.getElementById('inspectorCustomZoomInput');
   const depthSelect = document.getElementById('selectedSegmentDepth');
@@ -5227,7 +5256,7 @@ function setSegmentZoomLevel(segIndex, newLevel, shouldSaveState = false) {
     const matching = options.find(o => Math.abs(parseFloat(o) - rounded) < 0.02);
     depthSelect.value = matching || 'custom';
   }
-  
+
   renderZoomSegments();
   updateZoomList();
   requestPreviewRedraw();
@@ -5237,22 +5266,22 @@ window.setSegmentZoomLevel = setSegmentZoomLevel;
 function openTimelineContextMenu(segIndex, clientX, clientY, contextType = 'segment') {
   activeContextMenuSegIndex = segIndex;
   closeQuickZoomPopover();
-  
+
   const menu = document.getElementById('timelineContextMenu');
   if (!menu) return;
-  
+
   const titleEl = document.getElementById('contextMenuTitle');
   const toggleBtn = document.getElementById('contextMenuToggleMode');
   const toggleText = document.getElementById('contextMenuToggleModeText');
   const deleteBtn = document.getElementById('contextMenuDelete');
   const editZoomBtn = document.getElementById('contextMenuEditZoom');
   const chipsSection = menu.querySelector('.context-zoom-chips')?.parentElement;
-  
+
   if (segIndex >= 0 && segIndex < zoomSegments.length) {
     const seg = zoomSegments[segIndex];
     const isFixed = seg.mode === 'fixed';
     const level = (seg.zoomLevel || zoomDepths[settings.zoomDepth] || 1.75).toFixed(2);
-    
+
     if (titleEl) titleEl.textContent = `Zoom Segment #${segIndex + 1} (${level}×)`;
     if (toggleText) toggleText.innerHTML = isFixed
       ? `${studioIcon('target', 12, '', 'color:#a5b4fc;margin-right:4px;')} Switch to Follow Cursor`
@@ -5265,7 +5294,7 @@ function openTimelineContextMenu(segIndex, clientX, clientY, contextType = 'segm
       if (labelSpan) labelSpan.innerHTML = `${studioIcon('zoom', 12, '', 'margin-right:4px;')} Edit Zoom Amount (${level}×)...`;
     }
     if (chipsSection) chipsSection.style.display = 'block';
-    
+
     // Highlight matching chip
     menu.querySelectorAll('.context-zoom-chip').forEach(chip => {
       const cv = parseFloat(chip.dataset.zoom);
@@ -5287,22 +5316,22 @@ function openTimelineContextMenu(segIndex, clientX, clientY, contextType = 'segm
     }
     if (chipsSection) chipsSection.style.display = 'none';
   }
-  
+
   menu.style.display = 'block';
-  
+
   // Position menu
   const menuW = menu.offsetWidth || 210;
   const menuH = menu.offsetHeight || 220;
   let posX = clientX;
   let posY = clientY;
-  
+
   if (posX + menuW > window.innerWidth - 10) {
     posX = window.innerWidth - menuW - 10;
   }
   if (posY + menuH > window.innerHeight - 10) {
     posY = window.innerHeight - menuH - 10;
   }
-  
+
   menu.style.left = `${Math.max(10, posX)}px`;
   menu.style.top = `${Math.max(10, posY)}px`;
 }
@@ -5351,7 +5380,7 @@ function setupZoomEditControls() {
   // Popover number input
   let _quickNumSavedState = false;
   numInput?.addEventListener('focus', () => { _quickNumSavedState = false; });
-  numInput?.addEventListener('input', function() {
+  numInput?.addEventListener('input', function () {
     if (activeQuickZoomSegIndex < 0 || activeQuickZoomSegIndex >= zoomSegments.length) return;
     const val = parseFloat(this.value);
     if (isFinite(val) && val >= 1.05 && val <= 3.50) {
@@ -5362,10 +5391,10 @@ function setupZoomEditControls() {
       setSegmentZoomLevel(activeQuickZoomSegIndex, val, false);
     }
   });
-  numInput?.addEventListener('change', function() {
+  numInput?.addEventListener('change', function () {
     _quickNumSavedState = false;
   });
-  numInput?.addEventListener('keydown', function(e) {
+  numInput?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
       closeQuickZoomPopover();
     }
@@ -5374,7 +5403,7 @@ function setupZoomEditControls() {
   // Popover slider
   let _quickSliderSavedState = false;
   slider?.addEventListener('mousedown', () => { _quickSliderSavedState = false; });
-  slider?.addEventListener('input', function() {
+  slider?.addEventListener('input', function () {
     if (activeQuickZoomSegIndex < 0 || activeQuickZoomSegIndex >= zoomSegments.length) return;
     const val = parseFloat(this.value);
     if (!_quickSliderSavedState) {
@@ -5383,13 +5412,13 @@ function setupZoomEditControls() {
     }
     setSegmentZoomLevel(activeQuickZoomSegIndex, val, false);
   });
-  slider?.addEventListener('change', function() {
+  slider?.addEventListener('change', function () {
     _quickSliderSavedState = false;
   });
 
   // Popover preset buttons
   document.querySelectorAll('.quick-preset-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
+    btn.addEventListener('click', function (e) {
       e.stopPropagation();
       if (activeQuickZoomSegIndex < 0 || activeQuickZoomSegIndex >= zoomSegments.length) return;
       const val = parseFloat(this.dataset.val);
@@ -5400,7 +5429,7 @@ function setupZoomEditControls() {
   });
 
   // Popover toggle mode button
-  toggleModeBtn?.addEventListener('click', function(e) {
+  toggleModeBtn?.addEventListener('click', function (e) {
     e.stopPropagation();
     if (activeQuickZoomSegIndex < 0 || activeQuickZoomSegIndex >= zoomSegments.length) return;
     saveState();
@@ -5430,7 +5459,7 @@ function setupZoomEditControls() {
 
   // Context menu preset chips
   document.querySelectorAll('.context-zoom-chip').forEach(chip => {
-    chip.addEventListener('click', function(e) {
+    chip.addEventListener('click', function (e) {
       e.stopPropagation();
       const targetZoom = parseFloat(this.dataset.zoom);
       if (activeContextMenuSegIndex >= 0 && activeContextMenuSegIndex < zoomSegments.length) {
@@ -5443,7 +5472,7 @@ function setupZoomEditControls() {
   });
 
   // Context menu edit zoom
-  document.getElementById('contextMenuEditZoom')?.addEventListener('click', function(e) {
+  document.getElementById('contextMenuEditZoom')?.addEventListener('click', function (e) {
     e.stopPropagation();
     if (activeContextMenuSegIndex >= 0 && activeContextMenuSegIndex < zoomSegments.length) {
       const idx = activeContextMenuSegIndex;
@@ -5460,7 +5489,7 @@ function setupZoomEditControls() {
   });
 
   // Context menu toggle mode
-  document.getElementById('contextMenuToggleMode')?.addEventListener('click', function(e) {
+  document.getElementById('contextMenuToggleMode')?.addEventListener('click', function (e) {
     e.stopPropagation();
     if (activeContextMenuSegIndex >= 0 && activeContextMenuSegIndex < zoomSegments.length) {
       saveState();
@@ -5479,14 +5508,14 @@ function setupZoomEditControls() {
   });
 
   // Context menu split
-  document.getElementById('contextMenuSplit')?.addEventListener('click', function(e) {
+  document.getElementById('contextMenuSplit')?.addEventListener('click', function (e) {
     e.stopPropagation();
     closeTimelineContextMenu();
     splitAtPlayhead();
   });
 
   // Context menu delete
-  document.getElementById('contextMenuDelete')?.addEventListener('click', function(e) {
+  document.getElementById('contextMenuDelete')?.addEventListener('click', function (e) {
     e.stopPropagation();
     if (activeContextMenuSegIndex >= 0 && activeContextMenuSegIndex < zoomSegments.length) {
       saveState();
@@ -5504,7 +5533,7 @@ function setupZoomEditControls() {
 
   // Preview canvas context menu
   const pCanvas = document.getElementById('previewCanvas');
-  pCanvas?.addEventListener('contextmenu', function(e) {
+  pCanvas?.addEventListener('contextmenu', function (e) {
     e.preventDefault();
     e.stopPropagation();
     const currentMs = (video && isFinite(video.currentTime)) ? (video.currentTime * 1000) : 0;
@@ -5522,7 +5551,7 @@ function setupZoomEditControls() {
 
   // Timeline track context menu
   const tlTrack = document.getElementById('timeline');
-  tlTrack?.addEventListener('contextmenu', function(e) {
+  tlTrack?.addEventListener('contextmenu', function (e) {
     if (e.target.closest('.zoom-segment-pill')) return; // handled by pill listener
     e.preventDefault();
     e.stopPropagation();
@@ -5530,7 +5559,7 @@ function setupZoomEditControls() {
   });
 
   // Dismiss context menu & popover on outside click or escape
-  window.addEventListener('mousedown', function(e) {
+  window.addEventListener('mousedown', function (e) {
     const cMenu = document.getElementById('timelineContextMenu');
     if (cMenu && cMenu.style.display !== 'none' && !cMenu.contains(e.target)) {
       closeTimelineContextMenu();
@@ -5541,7 +5570,7 @@ function setupZoomEditControls() {
     }
   });
 
-  window.addEventListener('keydown', function(e) {
+  window.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       closeAllZoomFlyouts();
     }
@@ -5552,31 +5581,31 @@ function renderZoomSegments() {
   const layer = document.getElementById('zoomSegmentsLayer');
   const totalDuration = getVideoDuration();
   if (!layer || !video || !isFinite(totalDuration) || totalDuration <= 0) return;
-  
+
   layer.innerHTML = '';
-  
+
   zoomSegments.forEach((seg, idx) => {
     const startSec = Math.max(0, seg.startTime / 1000);
     const endSec = Math.min(totalDuration, seg.endTime / 1000);
     if (endSec <= startSec) return;
-    
+
     const leftPct = (startSec / totalDuration) * 100;
     const widthPct = Math.max(1.5, ((endSec - startSec) / totalDuration) * 100);
-    
+
     const isFixed = seg.mode === 'fixed';
     const pill = document.createElement('div');
     pill.className = `zoom-segment-pill${isFixed ? ' mode-fixed' : ''}${idx === selectedZoomIndex ? ' selected' : ''}`;
     pill.style.left = `${leftPct}%`;
     pill.style.width = `${widthPct}%`;
     pill.dataset.index = idx;
-    
+
     const rawLevel = (seg.zoomLevel || zoomDepths[settings.zoomDepth] || 1.75);
     const level = rawLevel.toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1');
     const modeIcon = seg.mode === 'fixed'
       ? studioIcon('pin', 11, '', 'color:#ffffff;vertical-align:-1px;')
       : studioIcon('zoom', 11, '', 'color:#ffffff;vertical-align:-1px;');
     pill.title = `Zoom ${level}× [${seg.mode || 'follow'}] (${formatTimeShort(startSec)} - ${formatTimeShort(endSec)}) • Double-click or right-click to edit zoom amount`;
-    
+
     // Left drag handle (adjusts start time)
     const handleLeft = document.createElement('div');
     handleLeft.className = 'zoom-handle zoom-handle-left';
@@ -5595,7 +5624,7 @@ function renderZoomSegments() {
     const iconSpan = `<span class="zoom-pill-mode-icon" title="Click to toggle Follow/Fixed">${modeIcon}</span>`;
     const levelSpan = `<span class="zoom-pill-level-badge" data-index="${idx}" title="Click or double-click to edit zoom (${level}×)">${level}×</span>`;
     label.innerHTML = widthPct > 4 ? `${iconSpan} ${levelSpan}` : `${iconSpan}`;
-    
+
     const modeIconEl = label.querySelector('.zoom-pill-mode-icon');
     if (modeIconEl) {
       modeIconEl.addEventListener('click', (e) => {
@@ -5656,7 +5685,7 @@ function renderZoomSegments() {
       startDrag(e, 'handle-right', idx);
     });
     pill.appendChild(handleRight);
-    
+
     // Drag entire segment or select
     pill.addEventListener('mousedown', (e) => {
       if (e.target.closest('.zoom-handle') || e.target.closest('.zoom-pill-delete') || e.target.closest('.zoom-pill-mode-icon') || e.target.closest('.zoom-pill-level-badge')) return;
@@ -5682,7 +5711,7 @@ function renderZoomSegments() {
       selectZoom(idx);
       openQuickZoomPopover(idx, pill, e.clientX, e.clientY);
     });
-    
+
     layer.appendChild(pill);
   });
 }
@@ -5721,10 +5750,10 @@ function renderClickMarkers() {
   const layer = document.getElementById('clickMarkersLayer');
   const totalDuration = getVideoDuration();
   if (!layer || !cursorData || !isFinite(totalDuration) || totalDuration <= 0) return;
-  
+
   layer.innerHTML = '';
   let clicks = getDeduplicatedClicks(cursorData);
-  
+
   // For long recordings with hundreds of clicks, sample to at most ~180 visible markers
   // to keep the timeline 60fps fast and prevent DOM thrashing
   if (clicks.length > 180) {
@@ -5735,11 +5764,11 @@ function renderClickMarkers() {
     }
     clicks = sampled;
   }
-  
+
   clicks.forEach((click) => {
     const clickSec = click.timestamp / 1000;
     if (clickSec < 0 || clickSec > totalDuration) return;
-    
+
     const leftPct = (clickSec / totalDuration) * 100;
     const marker = document.createElement('div');
     const isRight = click.button === 2 || click.buttonType === 'right';
@@ -5747,7 +5776,7 @@ function renderClickMarkers() {
     marker.style.left = `${leftPct}%`;
     const label = isRight ? 'Right-click' : (click.type === 'doubleclick' ? 'Double-click' : 'Click');
     marker.title = `${label} at ${formatTimeShort(clickSec)} • Click to seek`;
-    
+
     marker.addEventListener('click', (e) => {
       e.stopPropagation();
       if (video && isFinite(totalDuration)) {
@@ -5756,7 +5785,7 @@ function renderClickMarkers() {
         requestPreviewRedraw();
       }
     });
-    
+
     layer.appendChild(marker);
   });
 }
@@ -5816,19 +5845,19 @@ window.ensureSegmentFixedCoords = ensureSegmentFixedCoords;
 function selectZoom(index, options = {}) {
   selectedZoomIndex = index;
   const shouldSeek = options.seek !== false;
-  
+
   // Highlight active pill on timeline without destroying DOM elements!
   document.querySelectorAll('.zoom-segment-pill').forEach((p, idx) => {
     p.classList.toggle('selected', idx === index);
   });
-  
+
   updateZoomList();
-  
+
   const inspector = document.getElementById('selectedZoomInspector');
   const timeRangeEl = document.getElementById('inspectorTimeRange');
   const depthSelect = document.getElementById('selectedSegmentDepth');
   const focalRow = document.getElementById('inspectorFocalPositionRow');
-  
+
   if (index >= 0 && index < zoomSegments.length) {
     const seg = zoomSegments[index];
     if (shouldSeek && !isDragging && !isDraggingFocalPoint && video) {
@@ -5848,7 +5877,7 @@ function selectZoom(index, options = {}) {
         video.currentTime = targetMs / 1000;
       }
     }
-    
+
     if (inspector) {
       inspector.style.display = 'block';
       if (timeRangeEl) {
@@ -5926,11 +5955,11 @@ function setZoomFocalPreset(spot) {
   const focalRow = document.getElementById('inspectorFocalPositionRow');
   if (focalRow) focalRow.style.display = 'block';
   previewCanvas?.classList.add('focal-target-mode');
-  
+
   const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
   const srcY = browserUIHeight > 0 ? browserUIHeight : 0;
   const srcH = browserUIHeight > 0 ? (videoHeight - browserUIHeight) : videoHeight;
-  
+
   // Use 0.08 / 0.92 for edge & corner presets so the camera reaches the full clamped edge up to 3.0x zoom
   if (spot === 'center') {
     seg.centerX = videoWidth * 0.5;
@@ -5988,13 +6017,14 @@ let _toastTimeout = null;
 function showToast(message, durationMs = 2400) {
   const toast = document.getElementById('editorToast');
   if (!toast) return;
+  const timeoutMs = (typeof durationMs === 'number' && Number.isFinite(durationMs) && durationMs > 0) ? durationMs : 2800;
   toast.style.pointerEvents = '';
   toast.innerHTML = message;
   toast.classList.remove('hidden');
   if (_toastTimeout) clearTimeout(_toastTimeout);
   _toastTimeout = setTimeout(() => {
     toast.classList.add('hidden');
-  }, durationMs);
+  }, timeoutMs);
 }
 
 function splitAtPlayhead() {
@@ -6004,12 +6034,12 @@ function splitAtPlayhead() {
   }
   const dur = getVideoDuration();
   if (dur <= 0) return;
-  
+
   const currentMs = Math.round(video.currentTime * 1000);
-  
+
   // 1. Search for an existing zoom segment enclosing current playhead (with at least 150ms margins)
   const segIdx = zoomSegments.findIndex(s => currentMs >= (s.startTime + 150) && currentMs <= (s.endTime - 150));
-  
+
   if (segIdx >= 0) {
     saveState();
     const orig = zoomSegments[segIdx];
@@ -6072,14 +6102,14 @@ function splitAtPlayhead() {
     showToast(`Split zoom segment at ${formatTimeShort(currentMs / 1000)} (S)`);
     return;
   }
-  
+
   // 2. If playhead is over a segment but within 150ms of its edges
   const edgeIdx = zoomSegments.findIndex(s => currentMs >= s.startTime && currentMs <= s.endTime);
   if (edgeIdx >= 0) {
     showToast('Playhead too close to segment edge to split (<0.15s)');
     return;
   }
-  
+
   // 3. If outside existing zoom segments, create a new zoom cut at playhead
   saveState();
   addZoomAtCurrentTime('follow');
@@ -6089,12 +6119,12 @@ function splitAtPlayhead() {
 function updateZoomList() {
   const zoomList = document.getElementById('zoomList');
   if (!zoomList) return;
-  
+
   if (zoomSegments.length === 0) {
     zoomList.innerHTML = '<p style="color: var(--text-muted); font-size: 11px; padding: 10px; text-align: center;">No zoom points. Click "+ Add Zoom" or "Re-analyze".</p>';
     return;
   }
-  
+
   zoomList.innerHTML = '';
   const MAX_LIST_ITEMS = 60;
   const renderList = zoomSegments.slice(0, MAX_LIST_ITEMS);
@@ -6104,7 +6134,7 @@ function updateZoomList() {
     const level = rawLevel.toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1');
     const isSelected = (i === selectedZoomIndex);
     const isFixed = seg.mode === 'fixed';
-    
+
     const item = document.createElement('div');
     item.className = `zoom-list-item${isSelected ? ' selected' : ''}`;
     item.style.cssText = `
@@ -6225,10 +6255,10 @@ function updateZoomList() {
       }
       selectZoom(i);
     });
-    
+
     zoomList.appendChild(item);
   });
-  
+
   if (zoomSegments.length > MAX_LIST_ITEMS) {
     const note = document.createElement('p');
     note.style.cssText = 'color: var(--text-muted); font-size: 11px; padding: 8px 10px; text-align: center;';
@@ -6240,12 +6270,12 @@ function updateZoomList() {
 function addZoomAtCurrentTime(mode = 'follow') {
   if (typeof mode !== 'string') mode = 'follow';
   if (!videoLoaded) return;
-  
+
   saveState();
-  
+
   const time = video.currentTime * 1000;
   const zoomLevel = zoomDepths[settings.zoomDepth] || 1.75;
-  
+
   const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
   const srcY = browserUIHeight > 0 ? browserUIHeight : 0;
   const srcH = browserUIHeight > 0 ? (videoHeight - browserUIHeight) : videoHeight;
@@ -6279,14 +6309,14 @@ function addZoomAtCurrentTime(mode = 'follow') {
   const segStart = Math.max(0, time - leadIn);
   const rawEnd = segStart + 3000;
   const segEnd = totalDurMs > 500 ? Math.min(totalDurMs, Math.max(segStart + 900, rawEnd)) : rawEnd;
-  
+
   // Create segment structure compatible with the analyzer
   const newSegment = {
     startTime: segStart,
     endTime: segEnd,
-    positions: [{ 
-      x: centerX, 
-      y: centerY, 
+    positions: [{
+      x: centerX,
+      y: centerY,
       normalizedX: normX,
       normalizedY: normY,
       timestamp: time
@@ -6301,19 +6331,19 @@ function addZoomAtCurrentTime(mode = 'follow') {
     startCursorY: centerY,
     mode: mode === 'fixed' ? 'fixed' : 'follow'
   };
-  
+
   zoomSegments.push(newSegment);
   zoomSegments.sort((a, b) => a.startTime - b.startTime);
   if (analyzer && typeof analyzer.invalidatePathCache === 'function') {
     analyzer.invalidatePathCache();
   }
-  
+
   // Select the new segment
   selectedZoomIndex = zoomSegments.findIndex(s => s === newSegment);
-  
+
   debugLog('[Editor] Added zoom segment:', newSegment);
   debugLog('[Editor] Total zoom segments:', zoomSegments.length);
-  
+
   updateZoomUI();
   selectZoom(selectedZoomIndex);
 }
@@ -6343,7 +6373,7 @@ function resetTimeline() {
 
 function togglePlay() {
   if (!videoLoaded) return;
-  
+
   if (isPlaying) {
     video.pause();
     isPlaying = false;
@@ -6352,12 +6382,12 @@ function togglePlay() {
     const dur = getVideoDuration();
     const trimStartTime = trimHandles.start * dur;
     const trimEndTime = trimHandles.end * dur;
-    
+
     // If current time is outside trimmed range, jump to start
     if (video.currentTime < trimStartTime || video.currentTime >= trimEndTime) {
       video.currentTime = trimStartTime;
     }
-    
+
     video.play();
     isPlaying = true;
   }
@@ -6375,25 +6405,25 @@ function updatePlayButton() {
 function updateTimeline() {
   const dur = getVideoDuration();
   if (!video || !dur || !isFinite(dur)) return;
-  
+
   // Calculate playhead position as percentage of full video
   const percent = (video.currentTime / dur) * 100;
-  
+
   // Update playhead position (new widget)
   if (playheadElement) {
     playheadElement.style.left = Math.max(0, Math.min(100, percent)) + '%';
   }
-  
+
   // Update playhead position (legacy)
   if (timelinePlayhead) {
     timelinePlayhead.style.left = Math.max(0, Math.min(100, percent)) + '%';
   }
-  
+
   // Update progress bar
   if (timelineProgressFill) {
     timelineProgressFill.style.width = Math.max(0, Math.min(100, percent)) + '%';
   }
-  
+
   // Update time display in header
   if (timeDisplay) {
     timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(dur)}`;
@@ -6416,11 +6446,11 @@ function updateTimeline() {
       activeIndicator.style.display = 'none';
     }
   }
-  
+
   // Update time display with milliseconds
   const currentMs = Math.floor((video.currentTime % 1) * 100);
   const totalMs = Math.floor((video.duration % 1) * 100);
-  
+
   if (currentTimeEl) currentTimeEl.textContent = formatTime(video.currentTime);
   if (currentTimeMsEl) currentTimeMsEl.textContent = String(currentMs).padStart(2, '0');
   // Use canonical duration to avoid showing Infinity for un-patched WebM
@@ -6430,7 +6460,7 @@ function updateTimeline() {
     const totalMsFromCanonical = Math.floor(((canonicalDur || video.duration) % 1) * 100);
     totalTimeMsEl.textContent = String(isFinite(totalMsFromCanonical) ? totalMsFromCanonical : 0).padStart(2, '0');
   }
-  
+
   // Update topbar zoom status indicator
   const topbarZoomStatus = document.getElementById('topbarZoomStatus');
   const topbarZoomLevel = document.getElementById('topbarZoomLevel');
@@ -6565,23 +6595,23 @@ window.updateFocusTargetOverlay = updateFocusTargetOverlay;
 
 function renderPreviewFrame() {
   if (!videoLoaded || !ctx || !previewCanvas) return false;
-  
+
   // Video must have readyState >= 2 (HAVE_CURRENT_DATA) to decode a valid frame
   if (video.readyState < 2) return false;
-  
+
   // Calculate source dimensions (possibly cropped)
   let sourceX = 0;
   let sourceY = 0;
   let sourceWidth = videoWidth;
   let sourceHeight = videoHeight;
-  
+
   const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
   if (browserUIHeight > 0) {
     // Auto-crop browser UI from top (address bar + tabs)
     sourceY = browserUIHeight;
     sourceHeight = Math.max(1, videoHeight - browserUIHeight);
   }
-  
+
   // Zoom calculation — smooth lerp towards target for animated preview transitions
   let targetZoomScale = 1.0;
   let targetVideoX = sourceX + (sourceWidth / 2);
@@ -6599,7 +6629,7 @@ function renderPreviewFrame() {
   // Calculate target normalized positions relative to visible source area
   const targetNormX = Math.max(0, Math.min(1, (targetVideoX - sourceX) / sourceWidth));
   const targetNormY = Math.max(0, Math.min(1, (targetVideoY - sourceY) / sourceHeight));
-  
+
   // 1:1 match between live preview and exported video — camera coordinates are pre-smoothed by ZoomAnalyzer
   _previewZoomScale = targetZoomScale;
   _previewNormX = targetNormX;
@@ -6620,7 +6650,7 @@ function renderPreviewFrame() {
 
   // Clear canvas buffer before drawing new frame
   ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-  
+
   // Draw video to canvas with direct hardware-accelerated high-quality smoothing
   ctx.filter = 'none';
   if (settings.sharpening) {
@@ -6633,12 +6663,12 @@ function renderPreviewFrame() {
 
   // Composite Manual Blur regions over the video frame (supports Zoom-Synced & Screen-Locked modes)
   drawBlurRegionsOnPreview(sx, sy, sw, sh, sourceX, sourceY, sourceWidth, sourceHeight);
-  
+
   // Draw click effects on canvas preview
   if (settings.clickStyle !== 'none') {
     drawClickEffectsOnCanvas(sx, sy, sw, sh);
   }
-  
+
   // Draw cursor highlight on preview (OpenScreen-style halo, spotlight, ring, or dot)
   if (settings.cursorHighlight && analyzer) {
     drawCursorDotOnPreview(sx, sy, sw, sh);
@@ -6672,10 +6702,10 @@ function renderPreviewFrame() {
     }
   }
   updateFocusTargetOverlay(sx, sy, sw, sh);
-  
+
   // Keep window centered with rock-solid stability (no CSS transform scale distortion)
   videoWindow.style.transform = 'translate(-50%, -50%)';
-  
+
   if (!isVideoContentBlack(video)) {
     _hasDrawnValidFirstFrame = true;
   }
@@ -6689,20 +6719,20 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   if (!ctx || !previewCanvas) return;
   const targetX = seg.centerX ?? (videoWidth / 2);
   const targetY = seg.centerY ?? (videoHeight / 2);
-  
+
   const rawCanvasX = ((targetX - sx) / Math.max(1, sw)) * previewCanvas.width;
   const rawCanvasY = ((targetY - sy) / Math.max(1, sh)) * previewCanvas.height;
-  
+
   // Keep target handle grabbable inside canvas bounds even when placed at extreme corners or when current camera crop is far from the fixed spot
   const canvasX = Math.max(12, Math.min(previewCanvas.width - 12, rawCanvasX));
   const canvasY = Math.max(12, Math.min(previewCanvas.height - 12, rawCanvasY));
-  
+
   ctx.save();
-  
+
   // Screen Studio Purple Focal Target Dot
   const pulse = Math.sin(Date.now() / 240) * 2.5;
   const radius = 20 + pulse;
-  
+
   // 1. Ambient breathing purple aura
   const glowGrad = ctx.createRadialGradient(canvasX, canvasY, 4, canvasX, canvasY, radius * 1.85);
   glowGrad.addColorStop(0, 'rgba(168, 85, 247, 0.45)');
@@ -6712,7 +6742,7 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   ctx.arc(canvasX, canvasY, radius * 1.85, 0, Math.PI * 2);
   ctx.fillStyle = glowGrad;
   ctx.fill();
-  
+
   // 2. Outer glowing violet target ring
   ctx.beginPath();
   ctx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
@@ -6721,7 +6751,7 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   ctx.shadowColor = '#a855f7';
   ctx.shadowBlur = 12;
   ctx.stroke();
-  
+
   // 3. Inner concentric ring
   ctx.beginPath();
   ctx.arc(canvasX, canvasY, 8.5, 0, Math.PI * 2);
@@ -6729,7 +6759,7 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   ctx.lineWidth = 1.5;
   ctx.shadowBlur = 0;
   ctx.stroke();
-  
+
   // 4. Center solid purple bullseye dot
   ctx.beginPath();
   ctx.arc(canvasX, canvasY, 5, 0, Math.PI * 2);
@@ -6737,7 +6767,7 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
   ctx.shadowBlur = 5;
   ctx.fill();
-  
+
   // 5. Precision crosshair ticks
   ctx.beginPath();
   ctx.moveTo(canvasX - radius - 7, canvasY);
@@ -6752,7 +6782,7 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   ctx.lineWidth = 2;
   ctx.lineCap = 'round';
   ctx.stroke();
-  
+
   // 6. Screen Studio-style floating target badge (clamped inside canvas so edge/corner targets never clip)
   const labelText = 'Focal Target (drag to position)';
   ctx.font = '600 11px system-ui, -apple-system, sans-serif';
@@ -6765,7 +6795,7 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   const badgeY = (belowY + badgeH > previewCanvas.height - 8)
     ? Math.max(8, aboveY)
     : Math.max(8, belowY);
-  
+
   ctx.fillStyle = 'rgba(15, 10, 30, 0.92)';
   ctx.strokeStyle = 'rgba(168, 85, 247, 0.85)';
   ctx.lineWidth = 1.5;
@@ -6779,13 +6809,13 @@ function drawFocalTargetOnPreview(seg, sx, sy, sw, sh) {
   }
   ctx.fill();
   ctx.stroke();
-  
+
   ctx.fillStyle = '#f3e8ff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.shadowBlur = 0;
   ctx.fillText(labelText, badgeX + badgeW / 2, badgeY + badgeH / 2);
-  
+
   ctx.restore();
 }
 
@@ -6830,7 +6860,7 @@ function isPointInsideWebcamBubble(px, py, rect) {
 
 function setupCanvasFocalInteractions() {
   if (!previewCanvas) return;
-  
+
   function getCanvasCssDimensions() {
     const rect = previewCanvas.getBoundingClientRect();
     const headerH = (settings.showMacWindowHeader !== false) ? 32 : 0;
@@ -6852,7 +6882,7 @@ function setupCanvasFocalInteractions() {
       y: (e.clientY - rect.top) * scaleY
     };
   }
-  
+
   function getSourceAndCropMetrics() {
     let sourceX = 0;
     let sourceY = 0;
@@ -6944,7 +6974,7 @@ function setupCanvasFocalInteractions() {
     }
     return null;
   }
-  
+
   function handleFocalTargetMouseDown(e) {
     if (!videoLoaded || videoWidth <= 0) return;
     if (e.button === 2) return; // Right click handled by context menu
@@ -7024,29 +7054,29 @@ function setupCanvasFocalInteractions() {
         return;
       }
     }
-    
+
     // 4. Auto-resolve active zoom segment under playhead or selected
     const currentMs = video.currentTime * 1000;
     let segIdx = selectedZoomIndex;
     if (segIdx < 0 || segIdx >= zoomSegments.length) {
       segIdx = zoomSegments.findIndex(s => currentMs >= s.startTime && currentMs <= s.endTime);
     }
-    
+
     if (segIdx < 0 || segIdx >= zoomSegments.length) return;
     const seg = zoomSegments[segIdx];
-    
+
     // Only allow focal point repositioning on canvas when segment is explicitly in Fixed Spot mode
     if (seg.mode !== 'fixed') return;
-    
+
     // Save undo state BEFORE mutating seg.centerX / seg.centerY
     saveState();
     isDraggingFocalPoint = true;
     selectZoom(segIdx, { seek: false });
     previewCanvas.style.cursor = 'grabbing';
-    
+
     focalDragStartMouseX = e.clientX;
     focalDragStartMouseY = e.clientY;
-    
+
     const { width: cssW, height: cssH } = getCanvasCssDimensions();
     const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
     const sourceHeight = Math.max(1, videoHeight - browserUIHeight);
@@ -7054,10 +7084,10 @@ function setupCanvasFocalInteractions() {
     focalDragCanvasHeight = Math.max(1, cssH);
     focalDragCropW = videoWidth / Math.max(1, _previewZoomScale);
     focalDragCropH = sourceHeight / Math.max(1, _previewZoomScale);
-    
+
     // Calculate clicked video point
     const clickVideoCoords = canvasToVideoCoords(cCoords.x, cCoords.y);
-    
+
     // Check if the user grabbed near the existing purple target handle; if so, drag smoothly from current center without jumping
     const curTargetX = seg.centerX ?? (videoWidth / 2);
     const curTargetY = seg.centerY ?? (videoHeight / 2);
@@ -7066,7 +7096,7 @@ function setupCanvasFocalInteractions() {
     const clampedTargetCanvasX = Math.max(12, Math.min(previewCanvas.width - 12, rawTargetCanvasX));
     const clampedTargetCanvasY = Math.max(12, Math.min(previewCanvas.height - 12, rawTargetCanvasY));
     const distToHandle = clickedOverlayDirectly ? 0 : Math.hypot(cCoords.x - clampedTargetCanvasX, cCoords.y - clampedTargetCanvasY);
-    
+
     if (distToHandle > 32) {
       // Clicked elsewhere on canvas — jump target to clicked position
       seg.centerX = clickVideoCoords.x;
@@ -7079,7 +7109,7 @@ function setupCanvasFocalInteractions() {
     if (analyzer && typeof analyzer.invalidatePathCache === 'function') {
       analyzer.invalidatePathCache();
     }
-    
+
     updateZoomInspectorCoords(seg);
     requestPreviewRedraw();
   }
@@ -7089,7 +7119,7 @@ function setupCanvasFocalInteractions() {
   if (focusTargetOverlayEl) {
     focusTargetOverlayEl.addEventListener('mousedown', handleFocalTargetMouseDown);
   }
-  
+
   window.addEventListener('mousemove', (e) => {
     // 1. Handle active Draw-Blur drag rectangle
     if (_activeDrawBlurPreviewRect) {
@@ -7252,18 +7282,18 @@ function setupCanvasFocalInteractions() {
       const activeIdx = (selectedZoomIndex >= 0 && selectedZoomIndex < zoomSegments.length)
         ? selectedZoomIndex
         : zoomSegments.findIndex(s => currentMs >= s.startTime && currentMs <= s.endTime);
-        
+
       if (activeIdx >= 0 && zoomSegments[activeIdx].mode === 'fixed') {
         previewCanvas.style.cursor = 'crosshair';
       } else {
         previewCanvas.style.cursor = 'default';
       }
     }
-    
+
     if (!isDraggingFocalPoint) return;
     if (selectedZoomIndex < 0 || selectedZoomIndex >= zoomSegments.length) return;
     const seg = zoomSegments[selectedZoomIndex];
-    
+
     // Calculate stable linear delta scaled to video crop dimensions
     const deltaX = e.clientX - focalDragStartMouseX;
     const deltaY = e.clientY - focalDragStartMouseY;
@@ -7271,10 +7301,10 @@ function setupCanvasFocalInteractions() {
     const scaleY = focalDragCropH / focalDragCanvasHeight;
     const browserUIHeight = getEffectiveBrowserUIHeight(videoHeight);
     const minY = browserUIHeight > 0 ? browserUIHeight : 0;
-    
+
     const newX = Math.max(0, Math.min(videoWidth, focalDragStartCenterX + deltaX * scaleX));
     const newY = Math.max(minY, Math.min(videoHeight, focalDragStartCenterY + deltaY * scaleY));
-    
+
     seg.centerX = newX;
     seg.centerY = newY;
     seg.normalizedX = newX / Math.max(1, videoWidth);
@@ -7282,11 +7312,11 @@ function setupCanvasFocalInteractions() {
     if (analyzer && typeof analyzer.invalidatePathCache === 'function') {
       analyzer.invalidatePathCache();
     }
-    
+
     updateZoomInspectorCoords(seg);
     requestPreviewRedraw();
   });
-  
+
   window.addEventListener('mouseup', () => {
     if (_activeDrawBlurPreviewRect) {
       const rx = Math.min(_activeDrawBlurPreviewRect.startX, _activeDrawBlurPreviewRect.curX);
@@ -7494,13 +7524,13 @@ function renderCursorHighlightPrimitive(targetCtx, canvasX, canvasY, viewportX, 
  */
 function drawCursorDotOnPreview(sx, sy, sw, sh) {
   if (!ctx || !previewCanvas || !analyzer) return;
-  
+
   const timestamp = (video && Number.isFinite(video.currentTime)) ? (video.currentTime * 1000) : 0;
   const cursorPos = (typeof analyzer.resolveCursorHighlightPos === 'function')
     ? analyzer.resolveCursorHighlightPos(timestamp, videoWidth, videoHeight, displaySurface, zoomSegments)
     : analyzer.getCursorAtTime(timestamp, videoWidth, videoHeight, displaySurface);
   if (!cursorPos) return;
-  
+
   const cropSx = (sw !== undefined && sw > 0) ? sx : 0;
   const cropSy = (sh !== undefined && sh > 0) ? sy : 0;
   const cropSw = (sw !== undefined && sw > 0) ? sw : previewCanvas.width;
@@ -7509,7 +7539,7 @@ function drawCursorDotOnPreview(sx, sy, sw, sh) {
   // Convert cursor position from source video space to canvas space
   const canvasX = ((cursorPos.x - cropSx) / cropSw) * previewCanvas.width;
   const canvasY = ((cursorPos.y - cropSy) / cropSh) * previewCanvas.height;
-  
+
   // Scale proportionally to canvas width (1920px baseline) and user size multiplier
   const baseK = Math.max(0.5, previewCanvas.width / 1920);
   const sizeMult = Math.max(0.5, Math.min(2.5, Number(settings.cursorHighlightSize) || 1.0));
@@ -7518,10 +7548,10 @@ function drawCursorDotOnPreview(sx, sy, sw, sh) {
 
   // Only draw if within visible canvas bounds
   if (canvasX < -margin || canvasX > previewCanvas.width + margin || canvasY < -margin || canvasY > previewCanvas.height + margin) return;
-  
+
   // Tactile click recoil physics (OpenScreen / Screen Studio feel)
   let scale = 1.0;
-  const recentClick = Array.isArray(cursorData) && cursorData.find(d => 
+  const recentClick = Array.isArray(cursorData) && cursorData.find(d =>
     d && (d.type === 'click' || d.type === 'doubleclick' || d.type === 'mousedown') &&
     timestamp >= d.timestamp - 40 && timestamp <= d.timestamp + 190
   );
@@ -7530,7 +7560,7 @@ function drawCursorDotOnPreview(sx, sy, sw, sh) {
     const progress = Math.min(1, Math.max(0, elapsed / 230));
     scale = 1.0 - 0.24 * Math.sin(progress * Math.PI) * Math.exp(-progress * 1.8);
   }
-  
+
   // Compute velocity in 1920-normalized space for kinetic motion trail
   let vx = 0;
   let vy = 0;
@@ -7567,14 +7597,14 @@ function startRenderLoop() {
       animationFrameId = requestAnimationFrame(render);
       return;
     }
-    
+
     // Check if click ripple animations are active right now (80ms anticipation + 520ms radiation)
     const nowMs = video.currentTime * 1000;
     const clicksActive = settings.clickEnabled !== false && settings.clickStyle !== 'none' && cursorData.some(d =>
       (d.type === 'click' || d.type === 'doubleclick' || d.type === 'mousedown') &&
       nowMs >= d.timestamp - 100 && nowMs < d.timestamp + 650
     );
-    
+
     // Check target zoom scale
     let targetZoomScale = 1.0;
     if (settings.applyZoom && zoomSegments.length > 0 && analyzer) {
@@ -7587,7 +7617,7 @@ function startRenderLoop() {
     }
     const zoomLerpSettled = Math.abs(_previewZoomScale - targetZoomScale) < 0.002;
     const timeUnchanged = Math.abs(video.currentTime - _lastRenderedVideoTime) < 0.001;
-    
+
     // Skip redraw ONLY when:
     // 1. Paused
     // 2. We have already rendered at least one valid frame
@@ -7599,57 +7629,57 @@ function startRenderLoop() {
       animationFrameId = requestAnimationFrame(render);
       return;
     }
-    
+
     const drawn = renderPreviewFrame();
     if (drawn) {
       _forceRedraw = false;
       _lastClickEffectActive = clicksActive;
       _lastRenderedVideoTime = video.currentTime;
     }
-    
+
     // Smooth 60 FPS playhead & badge updates during playback
     if (isPlaying) {
       updateTimeline();
     }
-    
+
     animationFrameId = requestAnimationFrame(render);
   }
-  
+
   render();
 }
 
 function drawClickEffectsOnCanvas(sx, sy, sw, sh) {
   if (settings.clickEnabled === false || settings.clickStyle === 'none' || !cursorData || cursorData.length === 0) return;
-  
+
   const timestamp = video.currentTime * 1000;
   const previewBeforeMs = 80;  // 80ms anticipation
   const durationAfterMs = 520; // 520ms radiating pulse
   const totalWindow = previewBeforeMs + durationAfterMs; // 600ms total
-  
+
   const allClicks = getDeduplicatedClicks(cursorData);
-  const clicks = allClicks.filter(d => 
+  const clicks = allClicks.filter(d =>
     timestamp >= d.timestamp - previewBeforeMs &&
     timestamp < d.timestamp + durationAfterMs
   );
-  
+
   const cropSx = (sw !== undefined && sw > 0) ? sx : 0;
   const cropSy = (sh !== undefined && sh > 0) ? sy : 0;
   const cropSw = (sw !== undefined && sw > 0) ? sw : previewCanvas.width;
   const cropSh = (sh !== undefined && sh > 0) ? sh : previewCanvas.height;
-  
+
   const activeColor = settings.customClickColor || clickColors[settings.clickColor] || '#ffffff';
-  
+
   clicks.forEach(click => {
     const timeFromClick = timestamp - click.timestamp;
     const progress = (timeFromClick + previewBeforeMs) / totalWindow;
-    
+
     // Resolve exact source coordinates using unified resolver
     const clickCoords = ZoomAnalyzer.getPointSourceCoords(click, videoWidth, videoHeight, displaySurface);
-    
+
     // Map to canvas coordinates based on active zoom crop [cropSx, cropSy, cropSw, cropSh]
     const x = ((clickCoords.x - cropSx) / cropSw) * previewCanvas.width;
     const y = ((clickCoords.y - cropSy) / cropSh) * previewCanvas.height;
-    
+
     if (x >= -120 && x <= previewCanvas.width + 120 && y >= -120 && y <= previewCanvas.height + 120) {
       drawRippleOnContext(ctx, x, y, progress, click, {
         style: settings.clickStyle || 'ripple',
@@ -7676,19 +7706,19 @@ function hexToRgba(hex, alpha) {
  */
 function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
   if (!targetCtx || progress < 0 || progress > 1) return;
-  
+
   const style = opts?.style || 'ripple';
   if (style === 'none') return;
-  
+
   const wavesType = opts?.waves || 'double';
   const force = opts?.force || 'moderate';
   const baseColor = opts?.color || '#ffffff';
-  
+
   // Detect click types for visual distinction
   const isRightClick = click && (click.button === 2 || click.buttonType === 'right');
   const isMiddleClick = click && (click.button === 1 || click.buttonType === 'middle');
   const isDoubleClick = click && (click.type === 'doubleclick' || click.buttonType === 'double');
-  
+
   // Right click uses a distinctive warm amber/coral accent so viewers never confuse button presses
   let ringColor = baseColor;
   if (isRightClick) {
@@ -7697,7 +7727,7 @@ function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
   } else if (isMiddleClick) {
     ringColor = '#8b5cf6'; // Violet accent for middle click
   }
-  
+
   // Force & spread configurations
   const forceConfig = {
     weak: { maxRadius: 55, alpha: 0.8, stroke: 0.85 },
@@ -7705,18 +7735,18 @@ function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
     strong: { maxRadius: 125, alpha: 1.25, stroke: 1.25 }
   };
   const config = forceConfig[force] || forceConfig.moderate;
-  
+
   const anticipateWindow = 80 / 600; // ~0.1333 anticipation fraction
-  
+
   targetCtx.save();
-  
+
   if (progress < anticipateWindow) {
     // Phase 1: Pre-click anticipation (0 -> 80ms)
     // Tactile focal dot condenses inward showing exact press location
     const antProgress = progress / anticipateWindow;
     const antAlpha = antProgress * 0.75 * config.alpha;
     const antRadius = 4 + antProgress * 5;
-    
+
     // Ambient pre-glow
     const glowGrad = targetCtx.createRadialGradient(x, y, 0, x, y, antRadius * 2.2);
     glowGrad.addColorStop(0, hexToRgba(ringColor, antAlpha * 0.6));
@@ -7725,20 +7755,20 @@ function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
     targetCtx.arc(x, y, antRadius * 2.2, 0, Math.PI * 2);
     targetCtx.fillStyle = glowGrad;
     targetCtx.fill();
-    
+
     // Condensed focal point
     targetCtx.beginPath();
     targetCtx.arc(x, y, antRadius, 0, Math.PI * 2);
     targetCtx.fillStyle = hexToRgba(ringColor, antAlpha);
     targetCtx.fill();
-    
+
     targetCtx.restore();
     return;
   }
-  
+
   // Phase 2: Post-click radiating pulse (80ms -> 600ms)
   const t = (progress - anticipateWindow) / (1 - anticipateWindow); // 0 to 1
-  
+
   // Define wave delays based on selected wave profile
   let waveDefs = [{ delay: 0.0, weight: 1.0 }];
   if (wavesType === 'double') {
@@ -7753,29 +7783,29 @@ function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
       { delay: 0.28, weight: 0.52 }
     ];
   }
-  
+
   if (isDoubleClick && wavesType === 'single') {
     waveDefs.push({ delay: 0.22, weight: 0.85 });
   }
-  
+
   // 1. Expanding Multi-Wave Shockwaves (for 'ripple', 'both', 'ring')
   if (style === 'ripple' || style === 'both' || style === 'ring') {
     waveDefs.forEach((wave, idx) => {
       if (t < wave.delay) return;
       const wp = (t - wave.delay) / (1 - wave.delay);
       if (wp > 1) return;
-      
+
       // Screenforge-grade ease-out cubic radial dispersion
       const easeRadius = 1 - Math.pow(1 - wp, 3);
       const startRadius = 6;
       const r = startRadius + (config.maxRadius - startRadius) * easeRadius;
-      
+
       // Wave opacity: rapid attack in first 14%, smooth power decay
       const attack = Math.min(1, wp / 0.14);
       const decay = Math.pow(1 - wp, 1.5);
       const waveAlpha = Math.max(0, attack * decay * 0.95 * wave.weight * config.alpha);
       if (waveAlpha <= 0.01) return;
-      
+
       // Soft ambient aura / fill for leading wave
       if (idx === 0 && (style === 'ripple' || style === 'both')) {
         const auraAlpha = waveAlpha * 0.18;
@@ -7790,29 +7820,29 @@ function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
           targetCtx.fill();
         }
       }
-      
+
       // Main concentric shockwave ring
       targetCtx.beginPath();
       targetCtx.arc(x, y, r, 0, Math.PI * 2);
-      
+
       // Drop glow behind pulse ring for high contrast
       targetCtx.shadowColor = hexToRgba(ringColor, Math.min(1, waveAlpha * 0.8));
       targetCtx.shadowBlur = 6 * config.stroke;
-      
+
       // Line width tapers gracefully as pulse expands
       const baseWidth = (style === 'ring') ? 3.5 : 2.8;
       targetCtx.lineWidth = Math.max(1, (baseWidth - wp * 1.5) * config.stroke);
-      
+
       // If right click, style wave 2 with dashed lines for instant clarity
       if (isRightClick && idx === 1) {
         targetCtx.setLineDash([5, 4]);
       } else {
         targetCtx.setLineDash([]);
       }
-      
+
       targetCtx.strokeStyle = hexToRgba(ringColor, waveAlpha);
       targetCtx.stroke();
-      
+
       // Crisp inner highlight ring on wave 1
       if (idx === 0 && wp < 0.6) {
         const innerHighlightAlpha = waveAlpha * 0.45;
@@ -7824,32 +7854,32 @@ function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
       }
     });
   }
-  
+
   targetCtx.shadowBlur = 0;
   targetCtx.setLineDash([]);
-  
+
   // 2. Central Focal Anchor / Glow Orb (for 'ripple', 'both', 'orb')
   const anchorDecay = Math.pow(Math.max(0, 1 - t / 0.55), 1.8);
   const anchorAlpha = anchorDecay * config.alpha;
-  
+
   if (anchorAlpha > 0.02) {
     const isOrbDominant = (style === 'orb' || style === 'both');
-    const orbRadius = isOrbDominant 
+    const orbRadius = isOrbDominant
       ? (26 * config.stroke * (0.8 + (1 - t) * 0.4))
       : (12 * config.stroke * (0.7 + (1 - t) * 0.5));
-    
+
     // Radial gradient glow
     const anchorGrad = targetCtx.createRadialGradient(x, y, 0, x, y, Math.max(1, orbRadius));
     anchorGrad.addColorStop(0, hexToRgba('#ffffff', Math.min(1, anchorAlpha * 1.3)));
     anchorGrad.addColorStop(0.3, hexToRgba(ringColor, anchorAlpha * 0.95));
     anchorGrad.addColorStop(0.7, hexToRgba(ringColor, anchorAlpha * 0.4));
     anchorGrad.addColorStop(1, hexToRgba(ringColor, 0));
-    
+
     targetCtx.beginPath();
     targetCtx.arc(x, y, Math.max(1, orbRadius), 0, Math.PI * 2);
     targetCtx.fillStyle = anchorGrad;
     targetCtx.fill();
-    
+
     // Crisp central focal pip
     const pipRadius = Math.max(1.5, orbRadius * 0.25);
     targetCtx.beginPath();
@@ -7857,7 +7887,7 @@ function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
     targetCtx.fillStyle = hexToRgba('#ffffff', Math.min(1, anchorAlpha * 1.4));
     targetCtx.fill();
   }
-  
+
   // 3. Right-Click Distinctive Badge (viewers see exactly what's pressed)
   if (isRightClick && t < 0.6) {
     const rcAlpha = Math.min(1, (1 - t / 0.6)) * 0.9 * config.alpha;
@@ -7868,26 +7898,26 @@ function drawRippleOnContext(targetCtx, x, y, progress, click, opts) {
     targetCtx.font = 'bold 9px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     targetCtx.textAlign = 'center';
     targetCtx.textBaseline = 'middle';
-    
+
     const badgeY = y - 18 - (1 - Math.pow(1 - t, 2)) * 6;
     const badgeW = 16;
     const badgeH = 13;
     const badgeR = 3;
-    
+
     targetCtx.beginPath();
     if (typeof targetCtx.roundRect === 'function') {
-      targetCtx.roundRect(x - badgeW/2, badgeY - badgeH/2, badgeW, badgeH, badgeR);
+      targetCtx.roundRect(x - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, badgeR);
     } else {
-      targetCtx.rect(x - badgeW/2, badgeY - badgeH/2, badgeW, badgeH);
+      targetCtx.rect(x - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH);
     }
     targetCtx.fill();
     targetCtx.stroke();
-    
+
     targetCtx.fillStyle = hexToRgba('#111827', rcAlpha);
     targetCtx.fillText('R', x, badgeY + 0.5);
     targetCtx.restore();
   }
-  
+
   targetCtx.restore();
 }
 
@@ -7909,11 +7939,11 @@ function setupRippleSandbox() {
   const testArea = document.getElementById('rippleTestArea');
   const canvas = document.getElementById('rippleTestCanvas');
   if (!testArea || !canvas) return;
-  
+
   const testCtx = canvas.getContext('2d');
   let activeSandboxClicks = [];
   let sandboxAnimId = null;
-  
+
   function resizeCanvas() {
     const rect = testArea.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -7930,10 +7960,10 @@ function setupRippleSandbox() {
     }
     testCtx.scale(dpr, dpr);
   }
-  
+
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
-  
+
   function triggerSandboxClick(e) {
     e.preventDefault();
     const rect = testArea.getBoundingClientRect();
@@ -7941,7 +7971,7 @@ function setupRippleSandbox() {
     const y = e.clientY - rect.top;
     const button = e.button; // 0: left, 1: middle, 2: right
     const buttonType = button === 2 ? 'right' : (button === 1 ? 'middle' : 'left');
-    
+
     const clickObj = {
       timestamp: performance.now(),
       x,
@@ -7950,45 +7980,45 @@ function setupRippleSandbox() {
       buttonType,
       type: 'click'
     };
-    
+
     activeSandboxClicks.push(clickObj);
-    
+
     const placeholder = testArea.querySelector('.ripple-test-placeholder');
     if (placeholder) {
       placeholder.style.opacity = '0.25';
     }
-    
+
     if (!sandboxAnimId) {
       animateSandbox();
     }
   }
-  
+
   testArea.addEventListener('click', triggerSandboxClick);
   testArea.addEventListener('contextmenu', triggerSandboxClick);
-  
+
   function animateSandbox() {
     const now = performance.now();
     const totalWindow = 600;
     const previewBeforeMs = 80;
-    
+
     const rect = testArea.getBoundingClientRect();
     testCtx.clearRect(0, 0, rect.width, rect.height);
-    
+
     activeSandboxClicks = activeSandboxClicks.filter(c => (now - c.timestamp) < (totalWindow - previewBeforeMs));
-    
+
     if (activeSandboxClicks.length === 0) {
       sandboxAnimId = null;
       const placeholder = testArea.querySelector('.ripple-test-placeholder');
       if (placeholder) placeholder.style.opacity = '1';
       return;
     }
-    
+
     const activeColor = settings.customClickColor || clickColors[settings.clickColor] || '#ffffff';
-    
+
     activeSandboxClicks.forEach(c => {
       const elapsed = now - c.timestamp;
       const progress = (elapsed + previewBeforeMs) / totalWindow;
-      
+
       drawRippleOnContext(testCtx, c.x, c.y, progress, c, {
         style: settings.clickStyle || 'ripple',
         waves: settings.clickWaves || 'double',
@@ -7996,25 +8026,50 @@ function setupRippleSandbox() {
         color: activeColor
       });
     });
-    
+
     sandboxAnimId = requestAnimationFrame(animateSandbox);
   }
 }
 
 // Show export modal
-function exportVideo() {
-  if (!videoLoaded) return alert('No video loaded');
-  
-  const modal = document.getElementById('exportModal');
-  const resSelect = document.getElementById('exportResolution');
-  if (resSelect && (!resSelect.value || resSelect.value === '1080p')) {
-    if (videoWidth >= 2560 || videoHeight >= 1440) {
-      resSelect.value = '4k';
+function exportVideo(e) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
+  try {
+    const modal = document.getElementById('exportModal');
+    if (!modal) {
+      console.error('[Editor] exportModal not found in DOM');
+      return;
     }
+
+    const resSelect = document.getElementById('exportResolution');
+    if (resSelect && (!resSelect.value || resSelect.value === '1080p')) {
+      const w = (typeof videoWidth === 'number' && videoWidth > 0) ? videoWidth : (video?.videoWidth || 1920);
+      const h = (typeof videoHeight === 'number' && videoHeight > 0) ? videoHeight : (video?.videoHeight || 1080);
+      if (w >= 2560 || h >= 1440) {
+        resSelect.value = '4k';
+      }
+    }
+
+    modal.classList.remove('hidden');
+    modal.style.cssText = 'position: fixed !important; inset: 0 !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; background: rgba(3, 4, 8, 0.78) !important;';
+
+    const content = modal.querySelector('.modal-content');
+    if (content) {
+      content.style.cssText = 'position: relative !important; z-index: 1000000 !important; display: block !important;';
+    }
+
+    console.log('[Editor] Export modal opened');
+
+    updateExportEstimate();
+  } catch (err) {
+    console.error('[Editor] Error opening export modal:', err);
   }
-  modal.classList.remove('hidden');
-  
-  updateExportEstimate();
+}
+
+if (typeof window !== 'undefined') {
+  window.exportVideo = exportVideo;
 }
 
 // Track if export is processing
@@ -8030,30 +8085,39 @@ function setupExportModal() {
   const formatSelect = document.getElementById('exportFormat');
   const qualitySelect = document.getElementById('exportQuality');
   const backdrop = modal?.querySelector('.modal-backdrop');
-  
+
   const closeModal = () => {
     // Don't allow closing while processing
     if (isExportProcessing) {
       return;
     }
-    modal.classList.add('hidden');
+    modal?.classList.add('hidden');
+    if (modal) modal.style.display = 'none';
   };
-  
-  closeBtn?.addEventListener('click', closeModal);
-  cancelBtn?.addEventListener('click', closeModal);
-  
+
+  closeBtn?.addEventListener('click', (e) => {
+    e?.stopPropagation();
+    closeModal();
+  });
+  cancelBtn?.addEventListener('click', (e) => {
+    e?.stopPropagation();
+    closeModal();
+  });
+
   // Only allow backdrop click to close if not processing
   backdrop?.addEventListener('click', (e) => {
-    if (!isExportProcessing) {
+    if (!isExportProcessing && e.target === backdrop) {
       closeModal();
     }
   });
-  
+
   resolutionSelect?.addEventListener('change', updateExportEstimate);
   formatSelect?.addEventListener('change', updateExportEstimate);
   qualitySelect?.addEventListener('change', updateExportEstimate);
-  
-  confirmBtn?.addEventListener('click', doExport);
+
+  confirmBtn?.addEventListener('click', (e) => {
+    doExport();
+  });
 }
 
 function updateExportEstimate() {
@@ -8210,7 +8274,7 @@ function closeDiscordModal(dismissPermanently = false) {
     try {
       localStorage.setItem('cursordemo.discordPromptDismissed', 'true');
       localStorage.setItem('cursordemo.discordPromptShown', 'true');
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -8242,7 +8306,7 @@ function setupDiscordModal() {
       setTimeout(() => {
         copyBtn.textContent = 'Copy Error Details';
       }, 2000);
-    } catch (_) {}
+    } catch (_) { }
   });
 
   document.getElementById('discordModalJoinBtn')?.addEventListener('click', () => {
@@ -8256,9 +8320,9 @@ function setupDiscordModal() {
       try {
         localStorage.setItem('cursordemo.lastDiscordNote', combined);
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(combined).catch(() => {});
+          navigator.clipboard.writeText(combined).catch(() => { });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
     setTimeout(() => {
       closeDiscordModal(false);
@@ -8272,7 +8336,7 @@ function setupDiscordModal() {
     if (staleExport) {
       localStorage.removeItem('cursordemo.exportInProgress');
       let parsed = null;
-      try { parsed = JSON.parse(staleExport); } catch (_) {}
+      try { parsed = JSON.parse(staleExport); } catch (_) { }
       setTimeout(() => {
         showDiscordModal({
           mode: 'crash',
@@ -8283,7 +8347,7 @@ function setupDiscordModal() {
         });
       }, 450);
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // Global uncaught error & unhandled rejection fallback in Studio Editor
   window.addEventListener('error', (event) => {
@@ -8334,7 +8398,7 @@ function getChromeStoreReviewUrl() {
     if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.id === 'string' && chrome.runtime.id.trim()) {
       extId = chrome.runtime.id.trim();
     }
-  } catch (_) {}
+  } catch (_) { }
   return `https://chromewebstore.google.com/detail/cursordemo-screen-recorder/${extId}/reviews`;
 }
 
@@ -8433,7 +8497,7 @@ function closePostDownloadModal(dismissPermanently = false) {
     try {
       localStorage.setItem('cursordemo.reviewPromptDismissed', 'true');
       localStorage.setItem('cursordemo.reviewPromptShown', 'true');
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -8482,7 +8546,7 @@ function setupReviewModal() {
     if (feedbackInput && feedbackInput.value.trim()) {
       try {
         localStorage.setItem('cursordemo.lastUserFeedback', feedbackInput.value.trim());
-      } catch (_) {}
+      } catch (_) { }
       if (selectedReviewRating <= 3) {
         ctaBtn.setAttribute('href', getFeedbackIssueUrl(selectedReviewRating));
       }
@@ -8512,16 +8576,16 @@ async function doExport() {
   const resolution = document.getElementById('exportResolution')?.value || '1080p';
   const format = document.getElementById('exportFormat')?.value || 'webm';
   const quality = document.getElementById('exportQuality')?.value || 'high';
-  
+
   if (!processor || typeof processor.processVideo !== 'function') {
     console.error('[Editor] VideoProcessor not available');
     alert('Video processor not initialized. Please refresh the page.');
     return;
   }
-  
+
   // Set processing flag to prevent modal dismissal
   isExportProcessing = true;
-  
+
   // Pause preview video to avoid performance impact during export
   // The video processor uses its own separate video element
   if (video && !video.paused) {
@@ -8530,15 +8594,15 @@ async function doExport() {
     updatePlayButton();
     debugLog('[Editor] Paused preview video for export');
   }
-  
+
   // Disable close buttons during processing
   if (closeBtn) closeBtn.disabled = true;
   if (cancelBtn) cancelBtn.disabled = true;
-  
+
   try {
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Initializing...';
-    
+
     let blob = (currentVideoBlob && currentVideoBlob.size > 0) ? currentVideoBlob : null;
     if (!blob) {
       if (video && video.src && video.src.startsWith('blob:')) {
@@ -8556,7 +8620,7 @@ async function doExport() {
       if (!vidId) {
         try {
           vidId = new URLSearchParams(window.location.search).get('videoId');
-        } catch (_) {}
+        } catch (_) { }
       }
       if (!vidId) {
         try {
@@ -8564,7 +8628,7 @@ async function doExport() {
             const st = await chrome.storage.local.get(['lastVideoMetadata']);
             vidId = st?.lastVideoMetadata?.videoId || null;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
       if (vidId) {
         try {
@@ -8586,7 +8650,7 @@ async function doExport() {
     }
 
     debugLog('[Editor] Video blob size:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
-    
+
     // Even width/height — fewer encoder artifacts (H.264 / VP9) at 1440p and 4K
     const snapEven = (n) => {
       const v = Math.max(2, Math.round(Number(n) || 0));
@@ -8601,21 +8665,21 @@ async function doExport() {
       '720p': { width: 1280, height: 720 },
       '480p': { width: 854, height: 480 }
     };
-    
+
     const bitrates = {
       'maximum': 220000000, // 220 Mbps base for 1080p maximum (ultra master quality)
       'high': 150000000,    // 150 Mbps base for 1080p high
       'medium': 75000000,   // 75 Mbps base for 1080p medium
       'low': 40000000       // 40 Mbps base for 1080p low
     };
-    
+
     const targetRes = resolutions[resolution] || resolutions['4k'] || resolutions['1080p'];
     const targetBitrate = bitrates[quality] || bitrates['maximum'];
 
     // Apply aspect ratio to export dimensions
     let exportWidth = targetRes.width;
     let exportHeight = targetRes.height;
-    
+
     if (settings.aspectRatio === 'native') {
       if (resolution !== 'original') {
         const nativeAspect = videoWidth / videoHeight;
@@ -8632,7 +8696,7 @@ async function doExport() {
       const [aspectW, aspectH] = settings.aspectRatio.split(':').map(Number);
       const targetAspectRatio = aspectW / aspectH;
       const currentAspectRatio = targetRes.width / targetRes.height;
-      
+
       // Adjust dimensions to match selected aspect ratio
       // Maintain the dimension that results in higher total pixels (better quality)
       if (Math.abs(targetAspectRatio - currentAspectRatio) > 0.01) {
@@ -8640,11 +8704,11 @@ async function doExport() {
         const option1Width = Math.round(targetRes.height * targetAspectRatio);
         const option1Height = targetRes.height;
         const option1Pixels = option1Width * option1Height;
-        
+
         const option2Width = targetRes.width;
         const option2Height = Math.round(targetRes.width / targetAspectRatio);
         const option2Pixels = option2Width * option2Height;
-        
+
         // Choose the option with more pixels (better quality)
         if (option1Pixels >= option2Pixels) {
           exportWidth = option1Width;
@@ -8653,15 +8717,15 @@ async function doExport() {
           exportWidth = option2Width;
           exportHeight = option2Height;
         }
-        
-        debugLog('[Editor] Applied aspect ratio', settings.aspectRatio, 'to export dimensions:', 
-                    exportWidth, 'x', exportHeight, '(original:', targetRes.width, 'x', targetRes.height + ')');
+
+        debugLog('[Editor] Applied aspect ratio', settings.aspectRatio, 'to export dimensions:',
+          exportWidth, 'x', exportHeight, '(original:', targetRes.width, 'x', targetRes.height + ')');
       }
     }
 
     exportWidth = snapEven(exportWidth);
     exportHeight = snapEven(exportHeight);
-    
+
     // Scale bitrate based on actual export resolution
     const scaleFactor = (exportWidth * exportHeight) / (1920 * 1080);
     let resolutionMultiplier = scaleFactor;
@@ -8672,32 +8736,32 @@ async function doExport() {
       resolutionMultiplier = 0.5;
     }
     let finalBitrate = Math.round(targetBitrate * resolutionMultiplier);
-    
+
     // Cap bitrate to browser-safe maximum based on format
     let MAX_SAFE_BITRATE = 250000000; // 250 Mbps default for VP9/WebM
-    
+
     if (format === 'mp4') {
       MAX_SAFE_BITRATE = 200000000; // 200 Mbps for H.264/MP4 (high profile level 5.1/5.2)
     }
-    
+
     if (finalBitrate > MAX_SAFE_BITRATE) {
       finalBitrate = MAX_SAFE_BITRATE;
     }
-    
+
     // Ensure trim handles have valid values
     const trimStart = (trimHandles && isFinite(trimHandles.start)) ? trimHandles.start : 0;
     const trimEnd = (trimHandles && isFinite(trimHandles.end)) ? trimHandles.end : 1;
-    
-    debugLog('[Editor] Export settings:', { 
-      resolution, 
+
+    debugLog('[Editor] Export settings:', {
+      resolution,
       aspectRatio: settings.aspectRatio,
-      format, 
-      quality, 
+      format,
+      quality,
       exportDimensions: { width: exportWidth, height: exportHeight },
       finalBitrate: (finalBitrate / 1000000).toFixed(1) + ' Mbps',
       trim: [trimStart, trimEnd]
     });
-    
+
     const selectedFps = parseInt(document.getElementById('exportFps')?.value || '60');
 
     const exportSettings = {
@@ -8751,7 +8815,7 @@ async function doExport() {
       applyZoom: settings.applyZoom !== false,
       useWebCodecs: false
     };
-    
+
     debugLog('[Editor] Starting export...');
 
     try {
@@ -8762,23 +8826,27 @@ async function doExport() {
         width: exportWidth,
         height: exportHeight
       }));
-    } catch (_) {}
-    
+    } catch (_) { }
+
     // Show export progress overlay
     const progressOverlay = document.getElementById('exportProgressOverlay');
     const progressFill = document.getElementById('exportProgressFill');
     const progressPct = document.getElementById('exportProgressPct');
     const progressStatus = document.getElementById('exportProgressStatus');
-    
+
     // Close the export settings modal and show progress overlay
     modal.classList.add('hidden');
-    if (progressOverlay) progressOverlay.classList.remove('hidden');
-    
+    if (modal) modal.style.display = 'none';
+    if (progressOverlay) {
+      progressOverlay.classList.remove('hidden');
+      progressOverlay.style.display = 'flex';
+    }
+
     const exportZoomSegments = settings.applyZoom ? zoomSegments : [];
     const processed = await processor.processVideo(
-      blob, 
-      exportZoomSegments, 
-      function(progress) {
+      blob,
+      exportZoomSegments,
+      function (progress) {
         const pct = Math.round(progress);
         confirmBtn.innerHTML = 'Processing ' + pct + '%';
         if (progressFill) progressFill.style.width = pct + '%';
@@ -8789,11 +8857,11 @@ async function doExport() {
           else if (pct < 90) progressStatus.textContent = 'Encoding video...';
           else progressStatus.textContent = 'Finalizing...';
         }
-      }, 
-      exportSettings, 
+      },
+      exportSettings,
       cursorData
     );
-    
+
     debugLog('[Editor] Processing complete');
 
     if (!processed || !processed.size || processed.size === 0) {
@@ -8801,10 +8869,10 @@ async function doExport() {
     }
 
     debugLog('[Editor] Output size:', (processed.size / 1024 / 1024).toFixed(2), 'MB');
-    
+
     let mimeType = (processed && processed.type) ? processed.type : '';
     let fileExtension = mimeType.toLowerCase().includes('mp4') ? 'mp4' : 'webm';
-    
+
     if (progressFill) progressFill.style.width = '100%';
     if (progressPct) progressPct.textContent = '100%';
     if (progressStatus) progressStatus.textContent = 'Saving your file...';
@@ -8818,18 +8886,18 @@ async function doExport() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    
+
     // Clean up: revoke object URL after 60s so native "Save As" folder dialogs have plenty of time
     setTimeout(() => {
       URL.revokeObjectURL(url);
     }, 60000);
-    
+
     if (progressStatus) progressStatus.textContent = 'Download started!';
     confirmBtn.innerHTML = `${studioIcon('check', 18)} Export Complete!`;
 
     try {
       localStorage.removeItem('cursordemo.exportInProgress');
-    } catch (_) {}
+    } catch (_) { }
 
     let exportCount = 1;
     let isReviewDismissed = false;
@@ -8860,7 +8928,7 @@ async function doExport() {
       if (closeBtn) closeBtn.disabled = false;
       if (cancelBtn) cancelBtn.disabled = false;
       if (progressOverlay) progressOverlay.classList.add('hidden');
-      
+
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = `${studioIcon('export', 18)} Export`;
 
@@ -8889,22 +8957,22 @@ async function doExport() {
         showToast(`${studioIcon('check', 16)} Downloaded ${downloadFileName} (${outputSizeMB} MB)`);
       }
     }, 2000);
-    
+
   } catch (e) {
     console.error('[Editor] Export error:', e);
     try {
       localStorage.removeItem('cursordemo.exportInProgress');
-    } catch (_) {}
-    
+    } catch (_) { }
+
     // Re-enable close buttons on error
     isExportProcessing = false;
     if (closeBtn) closeBtn.disabled = false;
     if (cancelBtn) cancelBtn.disabled = false;
-    
+
     // Hide progress overlay on error
     const progressOverlay = document.getElementById('exportProgressOverlay');
     if (progressOverlay) progressOverlay.classList.add('hidden');
-    
+
     const errText = (e && e.message) ? e.message : String(e || 'Unknown export error');
     let friendlyHint = 'Video export failed: ' + errText;
     if (errText.includes('VideoEncoder')) {
@@ -8912,7 +8980,7 @@ async function doExport() {
     } else if (errText.includes('duration')) {
       friendlyHint += ' — Tip: The video stream metadata may be incomplete.';
     }
-    
+
     showDiscordModal({
       mode: 'crash',
       reason: 'export-failed',
@@ -8920,7 +8988,7 @@ async function doExport() {
       summary: friendlyHint,
       details: `ExportError (${resolution}, ${format}, ${quality}): ${errText}\n${e?.stack || ''}`
     });
-    
+
     confirmBtn.disabled = false;
     confirmBtn.innerHTML = `${studioIcon('export', 18)} Export`;
   }
@@ -8930,11 +8998,11 @@ function uploadBackground() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-  input.onchange = function(e) {
+  input.onchange = function (e) {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = function(ev) {
+      reader.onload = function (ev) {
         settings.backgroundImage = ev.target.result;
         settings.background = 'image'; // Set background type to image
         updateBackground();
@@ -8945,11 +9013,11 @@ function uploadBackground() {
   input.click();
 }
 
-window.addEventListener('beforeunload', function() {
+window.addEventListener('beforeunload', function () {
   if (animationFrameId) cancelAnimationFrame(animationFrameId);
 });
 
-window.addEventListener('resize', function() {
+window.addEventListener('resize', function () {
   updateFrameSize();
   generateTimeMarkers();
   drawTimelineAudioWaveform();
